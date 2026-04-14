@@ -79,7 +79,7 @@ namespace TaskManagement.Api.Data
                 UserId = Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
                 Username = "admin",
                 Email = "admin@taskmanager.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                PasswordHash = "$2a$11$yourStaticHashHere",
                 Role = "Admin",
                 CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             });

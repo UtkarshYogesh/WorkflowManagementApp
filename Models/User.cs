@@ -2,7 +2,7 @@
 {
     public class User
     {
-        public Guid UserId { get; set; } = Guid.NewGuid();
+        public Guid UserId { get; set; } 
 
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -13,6 +13,6 @@
         public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
 
         public ICollection<BacklogItem> AssignBacklogItems { get; set; } = new List<BacklogItem>();
-        public DateTime CreatedAt { get; internal set; }
+        public DateTime CreatedAt { get;  set; }
     }
 }
