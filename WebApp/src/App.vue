@@ -1,11 +1,31 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div class="app-shell">
+    <Sidebar />
+    <main class="app-main">
+      <router-view />
+    </main>
+  </div>
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import Sidebar from './components/layout/SideBar.vue'
+</script>
+
+<style scoped>
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: #090b13;
+  color: #e2e8f0;
+}
+
+.app-main {
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+</style>

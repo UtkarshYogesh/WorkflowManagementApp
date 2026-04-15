@@ -1,0 +1,50 @@
+src/
+│
+├── assets/                 # static files
+├── components/             # reusable UI components
+│   ├── common/
+│   │   ├── Button.vue
+│   │   ├── Modal.vue
+│   │   ├── Input.vue
+│   │
+│   ├── project/
+│   │   ├── ProjectCard.vue
+│   │
+│   ├── feature/
+│   │   ├── FeatureList.vue
+│   │
+│   ├── backlog/
+│   │   ├── BacklogList.vue
+│   │
+│   ├── task/
+│   │   ├── TaskCard.vue
+│   │   ├── KanbanBoard.vue
+│   │   ├── KanbanColumn.vue
+│
+├── views/                  # pages
+│   ├── Dashboard.vue
+│   ├── ProjectDetails.vue
+│   ├── FeatureDetails.vue
+│   ├── BacklogDetails.vue
+│
+├── router/
+│   └── index.js
+│
+├── store/                  # pinia stores
+│   ├── projectStore.js
+│   ├── featureStore.js
+│   ├── backlogStore.js
+│   ├── taskStore.js
+│
+├── services/               # API layer
+│   ├── api.js
+│   ├── projectService.js
+│   ├── featureService.js
+│   ├── backlogService.js
+│   ├── taskService.js
+│
+├── layouts/
+│   ├── MainLayout.vue
+│
+├── App.vue
+└── main.js
