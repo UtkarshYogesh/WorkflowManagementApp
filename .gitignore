@@ -45,3 +45,11 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# User-specific files
+*.user
