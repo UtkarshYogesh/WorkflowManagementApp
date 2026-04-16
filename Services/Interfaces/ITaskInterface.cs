@@ -4,6 +4,7 @@ namespace TaskManagement.Api.Services.Interfaces
 {
     public interface ITaskInterface
     {
+        Task<List<TaskResponse>> GetAllTasks();
         Task<List<TaskResponse>> GetAllTasksForBacklog(Guid backlogId);
         Task<TaskResponse> GetTaskById(Guid taskId);
         Task<TaskResponse> AddTaskToBacklog(Guid backlogId, TaskRequest taskRequest);

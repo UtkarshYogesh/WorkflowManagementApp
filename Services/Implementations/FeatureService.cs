@@ -15,6 +15,24 @@ namespace TaskManagement.Api.Services.Implementations
             _db = appDbContext;
         }
 
+        public async Task<List<FeatureResponse>> GetAllFeatures()
+        {
+            var features = await _db.Features
+                .Select(f => new FeatureResponse
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    Description = f.Description,
+                    Status = f.Status,
+                    CreatedAt = f.CreatedAt,
+                    ProjectId = f.ProjectId,
+                    AssignedToUserId = f.AssignedToUserId
+                })
+                .ToListAsync();
+
+            return features;
+        }
+
         public async Task<FeatureResponse> AddFeatureToProject(FeatureRequest featureRequest, Guid projectId)
         {
             var feature = new Feature

@@ -5,7 +5,7 @@
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Status { get; set; } = "Open";
+        public string Status { get; set; } = "New";
         public DateTime CreatedAt { get; set; } 
 
         public Guid FeatureId { get; set; }           // FK — now Guid

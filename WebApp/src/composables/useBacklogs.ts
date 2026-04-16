@@ -1,17 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import {
   fetchBacklogs,
+  fetchAllBacklogs,
   fetchBacklogById,
   createBacklog,
   deleteBacklog,
   updateBacklogStatus,
 } from "../services/backlogApi";
 
-export function useBacklogs(featureId: string) {
+export function useBacklogs(featureId?: string) {
   return useQuery({
-    queryKey: ["backlogs", featureId],
-    queryFn: async () => (await fetchBacklogs(featureId)).data,
-    enabled: !!featureId,
+    queryKey: ["backlogs", featureId ?? "all"],
+    queryFn: async () => {
+      if (featureId) {
+        return (await fetchBacklogs(featureId)).data;
+      }
+
+      return (await fetchAllBacklogs()).data;
+    },
+    enabled: true,
   });
 }
 

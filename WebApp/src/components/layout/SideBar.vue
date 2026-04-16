@@ -10,6 +10,9 @@
     <nav>
       <router-link class="nav-link" to="/">Dashboard</router-link>
       <router-link class="nav-link" to="/projects">Projects</router-link>
+      <router-link class="nav-link" to="/features">Features</router-link>
+      <router-link class="nav-link" to="/backlogs">Backlogs</router-link>
+      <router-link class="nav-link" to="/tasks">Tasks</router-link>
     </nav>
   </aside>
 </template>

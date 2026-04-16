@@ -1,16 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import {
   fetchTasks,
+  fetchAllTasks,
   createTask,
   deleteTask,
   updateTaskStatus,
+  fetchTaskById,
 } from "../services/taskApi";
 
-export function useTasks(backlogId: string) {
+export function useTasks(backlogId?: string) {
   return useQuery({
-    queryKey: ["tasks", backlogId],
-    queryFn: async () => (await fetchTasks(backlogId)).data,
-    enabled: !!backlogId,
+    queryKey: ["tasks", backlogId ?? "all"],
+    queryFn: async () => {
+      if (backlogId) {
+        return (await fetchTasks(backlogId)).data;
+      }
+
+      return (await fetchAllTasks()).data;
+    },
+    enabled: true,
   });
 }
 
@@ -41,8 +49,16 @@ export function useUpdateTaskStatus() {
 
   return useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: string }) => updateTaskStatus(taskId, status),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
+  });
+}
+
+export function useTask(taskId: string) {
+  return useQuery({
+    queryKey: ["task", taskId],
+    queryFn: async () => (await fetchTaskById(taskId)).data,
+    enabled: !!taskId,
   });
 }

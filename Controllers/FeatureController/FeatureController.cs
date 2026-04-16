@@ -16,6 +16,17 @@ namespace TaskManagement.Api.Controllers
         }
 
         // ===============================
+        // 🔹 Get all features
+        // GET: /api/features
+        // ===============================
+        [HttpGet("features")]
+        public async Task<IActionResult> GetAllFeatures()
+        {
+            var features = await featureInterface.GetAllFeatures();
+            return Ok(features);
+        }
+
+        // ===============================
         // 🔹 Get features by project
         // GET: /api/projects/{projectId}/features
         // ===============================

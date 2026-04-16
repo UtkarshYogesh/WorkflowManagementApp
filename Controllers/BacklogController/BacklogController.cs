@@ -16,6 +16,17 @@ namespace TaskManagement.Api.Controllers
         }
 
         // ===============================
+        // 🔹 Get all backlog items
+        // GET: /api/backlog-items
+        // ===============================
+        [HttpGet("backlog-items")]
+        public async Task<IActionResult> GetAllBacklogs()
+        {
+            var backlogs = await backlogInterface.GetAllBacklogs();
+            return Ok(backlogs);
+        }
+
+        // ===============================
         // 🔹 Get backlog items by feature
         // GET: /api/features/{featureId}/backlog-items
         // ===============================

@@ -11,6 +11,24 @@ namespace TaskManagement.Api.Services.Implementations
         public readonly AppDbContext _db;
         public BacklogService(AppDbContext appDbContext) { _db = appDbContext; }
 
+        public async Task<List<BacklogResponse>> GetAllBacklogs()
+        {
+            var backlogItems = await _db.BacklogItems
+                .Select(b => new BacklogResponse
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Description = b.Description,
+                    Status = b.Status,
+                    CreatedAt = b.CreatedAt,
+                    FeatureId = b.FeatureId,
+                    AssignedToUserId = b.AssignedToUserId
+                })
+                .ToListAsync();
+
+            return backlogItems;
+        }
+
         public async Task<BacklogResponse> AddBacklogToFeature(Guid featureId, BacklogRequest backlogRequest)
         {
             var backlogItem = new BacklogItem

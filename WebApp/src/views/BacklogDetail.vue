@@ -3,33 +3,26 @@
     <div class="page-header">
       <div>
         <p class="breadcrumb">
-          <router-link :to="`/projects/${projectId}`">Projects</router-link>
-          <span>/</span>
-          <router-link :to="`/projects/${projectId}/features/${featureId}`">Feature</router-link>
+          <router-link to="/backlogs">Backlogs</router-link>
           <span>/</span>
           <span>{{ backlog?.title || 'Backlog item' }}</span>
         </p>
         <h1>{{ backlog?.title || 'Loading backlog...' }}</h1>
         <p class="subtitle">Track tasks in a kanban board and update status quickly.</p>
       </div>
-      <router-link class="button secondary" :to="`/projects/${projectId}/features/${featureId}`"
-        >Back to backlog list</router-link
-      >
+      <div class="page-actions">
+        <button class="button" @click="showCreateForm = !showCreateForm">Create Task</button>
+        <button
+          class="button secondary"
+          @click="viewMode = viewMode === 'kanban' ? 'list' : 'kanban'"
+        >
+          {{ viewMode === 'kanban' ? 'List View' : 'Kanban View' }}
+        </button>
+      </div>
     </div>
 
-    <div class="detail-panel">
-      <div class="detail-card">
-        <h2>Backlog item</h2>
-        <p>{{ backlog?.description || 'No description added yet.' }}</p>
-        <p class="detail-meta">
-          <strong>Status:</strong> <span>{{ backlog?.status || 'Todo' }}</span>
-        </p>
-        <p class="detail-meta">
-          <strong>Created:</strong>
-          {{ backlog?.createdAt ? new Date(backlog.createdAt).toLocaleString() : '-' }}
-        </p>
-      </div>
-      <div class="detail-card form-card">
+    <div v-if="showCreateForm" class="form-panel">
+      <div class="form-card">
         <h2>Create a task</h2>
         <label>
           Title
@@ -40,16 +33,30 @@
           <textarea v-model="description" placeholder="Task details"></textarea>
         </label>
         <button class="button" :disabled="!title" @click="submitTask">Add task</button>
+        <button class="button ghost" @click="showCreateForm = false">Cancel</button>
       </div>
     </div>
 
-    <div class="kanban-section">
+    <div v-if="viewMode === 'kanban'" class="kanban-section">
       <h2>Task board</h2>
       <div v-if="isTasksLoading" class="empty-state">Loading tasks...</div>
       <div v-else-if="!tasks?.length" class="empty-state">
         No tasks yet. Create your first task to see the kanban board.
       </div>
       <KanbanBoard v-else :tasks="tasks" @change-status="changeStatus" @delete-task="deleteTask" />
+    </div>
+
+    <div v-else class="list-panel">
+      <h2>Task List</h2>
+      <div v-if="isTasksLoading" class="empty-state">Loading tasks...</div>
+      <div v-else-if="!tasks?.length" class="empty-state">
+        No tasks yet. Create your first task.
+      </div>
+      <div v-else>
+        <article v-for="task in tasks" :key="task.id" class="list-item">
+          <h4>{{ task.title }}</h4>
+        </article>
+      </div>
     </div>
   </section>
 </template>
@@ -58,7 +65,7 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import KanbanBoard from '../components/kanban/KanbanBoard.vue'
-import { useBacklog, useBacklogs } from '../composables/useBacklogs'
+import { useBacklog } from '../composables/useBacklogs'
 import {
   useTasks,
   useCreateTask,
@@ -67,8 +74,6 @@ import {
 } from '../composables/useTasks'
 
 const route = useRoute()
-const projectId = String(route.params.projectId || '')
-const featureId = String(route.params.featureId || '')
 const backlogId = String(route.params.backlogId || '')
 
 const { data: backlog } = useBacklog(backlogId)
@@ -79,6 +84,8 @@ const updateTaskStatusMutation = useUpdateTaskStatus()
 
 const title = ref('')
 const description = ref('')
+const showCreateForm = ref(false)
+const viewMode = ref<'kanban' | 'list'>('kanban')
 
 const submitTask = async () => {
   if (!title.value) return
@@ -88,6 +95,7 @@ const submitTask = async () => {
   })
   title.value = ''
   description.value = ''
+  showCreateForm.value = false
 }
 
 const changeStatus = async ({ taskId, status }: { taskId: string; status: string }) => {

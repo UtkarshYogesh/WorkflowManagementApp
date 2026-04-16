@@ -12,24 +12,12 @@
           <div class="task-actions">
             <button
               class="small"
-              v-if="task.status !== 'Todo'"
-              @click="$emit('change-status', { taskId: task.id, status: 'Todo' })"
+              v-for="s in statuses"
+              :key="s"
+              v-if="task.status !== s"
+              @click="$emit('change-status', { taskId: task.id, status: s })"
             >
-              Todo
-            </button>
-            <button
-              class="small"
-              v-if="task.status !== 'In Progress'"
-              @click="$emit('change-status', { taskId: task.id, status: 'In Progress' })"
-            >
-              In Progress
-            </button>
-            <button
-              class="small success"
-              v-if="task.status !== 'Done'"
-              @click="$emit('change-status', { taskId: task.id, status: 'Done' })"
-            >
-              Done
+              {{ s }}
             </button>
             <button class="small ghost" @click="$emit('delete-task', task.id)">Delete</button>
           </div>
@@ -49,8 +37,9 @@ type TaskItem = {
   status: string
 }
 
-const props = defineProps<{ tasks: TaskItem[] }>()
-const statuses = ['Todo', 'In Progress', 'Done'] as const
+const props = defineProps<{ tasks: TaskItem[]; statuses?: string[] }>()
+const defaultStatuses = ['Todo', 'In Progress', 'Done'] as const
+const statuses = computed(() => props.statuses || defaultStatuses)
 
 const grouped = computed(() => {
   return Object.fromEntries(

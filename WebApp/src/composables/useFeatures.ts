@@ -1,17 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import {
   fetchFeatures,
+  fetchAllFeatures,
   fetchFeatureById,
   createFeature,
   deleteFeature,
   updateFeatureStatus,
 } from "../services/featureApi";
 
-export function useFeatures(projectId: string) {
+export function useFeatures(projectId?: string) {
   return useQuery({
-    queryKey: ["features", projectId],
-    queryFn: async () => (await fetchFeatures(projectId)).data,
-    enabled: !!projectId,
+    queryKey: ["features", projectId ?? "all"],
+    queryFn: async () => {
+      if (projectId) {
+        return (await fetchFeatures(projectId)).data;
+      }
+
+      return (await fetchAllFeatures()).data;
+    },
+    enabled: true,
   });
 }
 

@@ -12,6 +12,24 @@ namespace TaskManagement.Api.Services.Implementations
 
         public TaskService(AppDbContext appDbContext) { _db = appDbContext; }
 
+        public async Task<List<TaskResponse>> GetAllTasks()
+        {
+            var tasks = await _db.Tasks
+                .Select(t => new TaskResponse
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    Status = t.Status,
+                    CreatedAt = t.CreatedAt,
+                    BacklogItemId = t.BacklogItemId,
+                    AssignedToUserId = t.AssignedToUserId
+                })
+                .ToListAsync();
+
+            return tasks;
+        }
+
         public async Task<List<TaskResponse>> GetAllTasksForBacklog(Guid backlogId)
         {
             var tasks = await _db.Tasks.Where(t => t.BacklogItemId == backlogId)

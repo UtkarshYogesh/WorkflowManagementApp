@@ -3,6 +3,9 @@ import api from "./api";
 export const fetchBacklogs = (featureId: string) =>
   api.get(`/features/${featureId}/backlog-items`);
 
+export const fetchAllBacklogs = () =>
+  api.get(`/backlog-items`);
+
 export const fetchBacklogById = (backlogId: string) =>
   api.get(`/backlog-items/${backlogId}`);
 

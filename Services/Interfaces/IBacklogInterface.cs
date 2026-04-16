@@ -4,6 +4,7 @@ namespace TaskManagement.Api.Services.Interfaces
 {
     public interface IBacklogInterface
     {
+        Task<List<BacklogResponse>> GetAllBacklogs();
         Task<BacklogResponse> AddBacklogToFeature(Guid featureId, BacklogRequest backlogRequest);
         Task<List<BacklogResponse>> GetBacklogsByFeatureId(Guid featureId);
 

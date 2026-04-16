@@ -4,6 +4,7 @@ namespace TaskManagement.Api.Services.Interfaces
 {
     public interface IFeatureInterface
     {
+        Task<List<FeatureResponse>> GetAllFeatures();
         Task<FeatureResponse> AddFeatureToProject(FeatureRequest featureRequest, Guid projectId);
 
         Task<List<FeatureResponse>> GetFeaturesByProjectId(Guid projectId);

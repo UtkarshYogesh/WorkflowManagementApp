@@ -3,32 +3,26 @@
     <div class="page-header">
       <div>
         <p class="breadcrumb">
-          <router-link :to="`/projects/${projectId}`">Projects</router-link>
+          <router-link to="/features">Features</router-link>
           <span>/</span>
           <span>{{ feature?.name || 'Feature' }}</span>
         </p>
         <h1>{{ feature?.name || 'Loading feature...' }}</h1>
-        <p class="subtitle">Manage backlog items and task flow for this feature.</p>
+        <p class="subtitle">Manage backlog items for this feature.</p>
       </div>
-      <router-link class="button secondary" :to="`/projects/${projectId}`"
-        >Back to project</router-link
-      >
+      <div class="page-actions">
+        <button class="button" @click="showCreateForm = !showCreateForm">Create Backlog</button>
+        <button
+          class="button secondary"
+          @click="viewMode = viewMode === 'kanban' ? 'list' : 'kanban'"
+        >
+          {{ viewMode === 'kanban' ? 'List View' : 'Kanban View' }}
+        </button>
+      </div>
     </div>
 
-    <div class="detail-grid">
-      <div class="detail-card">
-        <h3>Feature Info</h3>
-        <p>
-          <strong>Status:</strong> <span class="badge">{{ feature?.status || 'New' }}</span>
-        </p>
-        <p><strong>Description:</strong> {{ feature?.description || 'No description yet.' }}</p>
-        <p>
-          <strong>Created:</strong>
-          {{ feature?.createdAt ? new Date(feature.createdAt).toLocaleDateString() : '-' }}
-        </p>
-      </div>
-
-      <div class="detail-card form-card">
+    <div v-if="showCreateForm" class="form-panel">
+      <div class="form-card">
         <h3>Add a backlog item</h3>
         <label>
           Title
@@ -39,28 +33,31 @@
           <textarea v-model="description" placeholder="Backlog description"></textarea>
         </label>
         <button class="button" :disabled="!title" @click="submitBacklog">Create backlog</button>
+        <button class="button ghost" @click="showCreateForm = false">Cancel</button>
       </div>
     </div>
 
-    <div class="list-panel">
-      <h2>Backlog items</h2>
+    <div v-if="viewMode === 'kanban'" class="kanban-section">
+      <h2>Backlog Kanban</h2>
+      <KanbanBoard
+        :tasks="backlogs"
+        :statuses="['New', 'Committed', 'Done']"
+        @change-status="changeStatus"
+        @delete-task="deleteBacklog"
+      />
+    </div>
+
+    <div v-else class="list-panel">
+      <h2>Backlog List</h2>
       <div v-if="isBacklogsLoading" class="empty-state">Loading backlog items...</div>
       <div v-else-if="backlogs?.length === 0" class="empty-state">
-        No backlog items yet. Add one now.
+        No backlog items yet. Create one now.
       </div>
-      <div class="cards-grid">
-        <article v-for="backlog in backlogs" :key="backlog.id" class="card">
-          <div class="card-header">
-            <h3>{{ backlog.title }}</h3>
-            <span class="status-pill">{{ backlog.status }}</span>
-          </div>
+      <div v-else>
+        <article v-for="backlog in backlogs" :key="backlog.id" class="list-item">
+          <h4>{{ backlog.title }}</h4>
           <p>{{ backlog.description }}</p>
-          <div class="card-actions">
-            <router-link :to="`/projects/${projectId}/features/${featureId}/backlogs/${backlog.id}`"
-              >Open tasks</router-link
-            >
-            <button class="button ghost" @click="deleteBacklog(backlog.id)">Delete</button>
-          </div>
+          <span class="status-pill">{{ backlog.status }}</span>
         </article>
       </div>
     </div>
@@ -68,28 +65,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import KanbanBoard from '../components/kanban/KanbanBoard.vue'
+import { useFeature } from '../composables/useFeatures'
 import {
-  useFeature,
-  useFeatures,
-  useCreateFeature,
-  useDeleteFeature,
-  useUpdateFeatureStatus,
-} from '../composables/useFeatures'
-import { useBacklogs, useCreateBacklog, useDeleteBacklog } from '../composables/useBacklogs'
+  useBacklogs,
+  useCreateBacklog,
+  useDeleteBacklog,
+  useUpdateBacklogStatus,
+} from '../composables/useBacklogs'
 
 const route = useRoute()
-const projectId = String(route.params.projectId || '')
 const featureId = String(route.params.featureId || '')
 
-const { data: feature, isLoading: isFeatureLoading } = useFeature(featureId)
+const { data: feature } = useFeature(featureId)
 const { data: backlogs, isLoading: isBacklogsLoading } = useBacklogs(featureId)
 const createBacklogMutation = useCreateBacklog()
 const deleteBacklogMutation = useDeleteBacklog()
+const updateBacklogStatusMutation = useUpdateBacklogStatus()
 
 const title = ref('')
 const description = ref('')
+const showCreateForm = ref(false)
+const viewMode = ref<'kanban' | 'list'>('kanban')
 
 const submitBacklog = async () => {
   if (!title.value) return
@@ -99,6 +98,11 @@ const submitBacklog = async () => {
   })
   title.value = ''
   description.value = ''
+  showCreateForm.value = false
+}
+
+const changeStatus = async ({ taskId, status }: { taskId: string; status: string }) => {
+  await updateBacklogStatusMutation.mutateAsync({ backlogId: taskId, status })
 }
 
 const deleteBacklog = async (backlogId: string) => {
