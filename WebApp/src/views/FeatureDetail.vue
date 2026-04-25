@@ -12,12 +12,6 @@
       </div>
       <div class="page-actions">
         <button class="button" @click="showCreateForm = !showCreateForm">Create Backlog</button>
-        <button
-          class="button secondary"
-          @click="viewMode = viewMode === 'kanban' ? 'list' : 'kanban'"
-        >
-          {{ viewMode === 'kanban' ? 'List View' : 'Kanban View' }}
-        </button>
       </div>
     </div>
 
@@ -37,28 +31,28 @@
       </div>
     </div>
 
-    <div v-if="viewMode === 'kanban'" class="kanban-section">
-      <h2>Backlog Kanban</h2>
-      <KanbanBoard
-        :tasks="backlogs"
-        :statuses="['New', 'Committed', 'Done']"
-        @change-status="changeStatus"
-        @delete-task="deleteBacklog"
-      />
-    </div>
-
-    <div v-else class="list-panel">
-      <h2>Backlog List</h2>
-      <div v-if="isBacklogsLoading" class="empty-state">Loading backlog items...</div>
-      <div v-else-if="backlogs?.length === 0" class="empty-state">
-        No backlog items yet. Create one now.
+    <div class="backlogs-section">
+      <h2>Backlogs</h2>
+      <div v-if="isBacklogsLoading" class="empty-state">Loading backlogs...</div>
+      <div v-else-if="!backlogs?.length" class="empty-state">
+        No backlogs yet. Create your first backlog.
       </div>
-      <div v-else>
-        <article v-for="backlog in backlogs" :key="backlog.id" class="list-item">
-          <h4>{{ backlog.title }}</h4>
-          <p>{{ backlog.description }}</p>
-          <span class="status-pill">{{ backlog.status }}</span>
-        </article>
+      <div v-else class="backlogs-table">
+        <div class="table-header">
+          <div class="header-cell name-header">Name</div>
+          <div class="header-cell status-header">Status</div>
+        </div>
+        <div
+          v-for="backlog in backlogs"
+          :key="backlog.id"
+          class="table-row"
+          @click="navigateToBacklog(backlog.id)"
+        >
+          <div class="table-cell name-cell">{{ backlog.title }}</div>
+          <div class="table-cell status-cell">
+            <span class="status-pill">{{ backlog.status }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -66,8 +60,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
-import KanbanBoard from '../components/kanban/KanbanBoard.vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useFeature } from '../composables/useFeatures'
 import {
   useBacklogs,
@@ -77,6 +70,7 @@ import {
 } from '../composables/useBacklogs'
 
 const route = useRoute()
+const router = useRouter()
 const featureId = String(route.params.featureId || '')
 
 const { data: feature } = useFeature(featureId)
@@ -88,7 +82,6 @@ const updateBacklogStatusMutation = useUpdateBacklogStatus()
 const title = ref('')
 const description = ref('')
 const showCreateForm = ref(false)
-const viewMode = ref<'kanban' | 'list'>('kanban')
 
 const submitBacklog = async () => {
   if (!title.value) return
@@ -101,12 +94,8 @@ const submitBacklog = async () => {
   showCreateForm.value = false
 }
 
-const changeStatus = async ({ taskId, status }: { taskId: string; status: string }) => {
-  await updateBacklogStatusMutation.mutateAsync({ backlogId: taskId, status })
-}
-
-const deleteBacklog = async (backlogId: string) => {
-  await deleteBacklogMutation.mutateAsync(backlogId)
+const navigateToBacklog = (backlogId: string) => {
+  router.push(`/backlogs/${backlogId}`)
 }
 </script>
 
@@ -170,6 +159,73 @@ const deleteBacklog = async (backlogId: string) => {
 }
 .list-panel {
   margin-top: 12px;
+}
+.backlogs-section {
+  margin-top: 12px;
+}
+.backlogs-section h2 {
+  color: #f8fafc;
+  margin-bottom: 20px;
+}
+.backlogs-table {
+  background: #0f172a;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  overflow: hidden;
+}
+.table-header {
+  display: flex;
+  background: rgba(148, 163, 184, 0.05);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+.header-cell {
+  padding: 16px;
+  font-weight: 600;
+  color: #cbd5e1;
+  flex: 1;
+}
+.name-header {
+  flex: 2;
+}
+.status-header {
+  flex: 1;
+}
+.table-row {
+  display: flex;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.table-row:hover {
+  background: rgba(148, 163, 184, 0.03);
+}
+.table-row:last-child {
+  border-bottom: none;
+}
+.table-cell {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.name-cell {
+  flex: 2;
+  color: #f8fafc;
+  font-weight: 500;
+}
+.status-cell {
+  flex: 1;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 .cards-grid {
   display: grid;

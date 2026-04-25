@@ -13,6 +13,8 @@
         public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
 
         public ICollection<BacklogItem> AssignBacklogItems { get; set; } = new List<BacklogItem>();
+
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
         public DateTime CreatedAt { get;  set; }
     }
 }

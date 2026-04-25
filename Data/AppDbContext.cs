@@ -8,6 +8,7 @@ namespace TaskManagement.Api.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<Project> Projects => Set<Project>();
         public DbSet<Feature> Features => Set<Feature>();
         public DbSet<BacklogItem> BacklogItems => Set<BacklogItem>();
@@ -73,6 +74,13 @@ namespace TaskManagement.Api.Data
             .HasForeignKey(f => f.AssignedToUserId)
             .OnDelete(DeleteBehavior.SetNull);
 
+            mb.Entity<RefreshToken>()
+                .HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId);
+
+            mb.Entity<RefreshToken>()
+                 .HasKey(rt => rt.Id);
 
             mb.Entity<User>().HasData(new User
             {

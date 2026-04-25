@@ -13,6 +13,7 @@ const routes = [
   { path: '/', component: Dashboard },
   { path: '/projects', component: Projects },
   { path: '/projects/:projectId', component: ProjectDetail },
+  { path: '/projects/:projectId/features/:featureId', component: FeatureDetail },
   { path: '/features', component: Features },
   { path: '/features/:featureId', component: FeatureDetail },
   { path: '/backlogs', component: Backlogs },
