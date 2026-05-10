@@ -74,11 +74,12 @@
               <strong>{{ feature.name }}</strong>
               <small>{{ feature.description || 'No description.' }}</small>
             </div>
-            <span class="status-pill">{{ feature.status }}</span>
-            <select
-              :value="feature.assignedToUserId || ''"
-              @change="assignFeatureFromEvent(feature.id, $event)"
-            >
+            <select v-model="getFeatureDraft(feature).status">
+              <option v-for="status in featureStatuses" :key="status" :value="status">
+                {{ status }}
+              </option>
+            </select>
+            <select v-model="getFeatureDraft(feature).assignedToUserId">
               <option value="" disabled>Assign user</option>
               <option v-for="user in users" :key="user.userId" :value="user.userId">
                 {{ user.username }}
@@ -88,6 +89,9 @@
               <router-link :to="`/projects/${projectId}/features/${feature.id}`" class="button secondary">
                 Open
               </router-link>
+              <button class="button secondary" :disabled="!isFeatureDirty(feature)" @click="saveFeatureChanges(feature)">
+                Save
+              </button>
               <button class="button ghost" @click="deleteFeature(feature.id)">Delete</button>
             </div>
           </article>
@@ -98,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProject } from '../composables/useProjects'
 import {
@@ -106,6 +110,7 @@ import {
   useCreateFeature,
   useDeleteFeature,
   useAssignFeature,
+  useUpdateFeatureStatus,
 } from '../composables/useFeatures'
 import { useUsers } from '../composables/useUsers'
 
@@ -117,10 +122,27 @@ const { data: users } = useUsers()
 const createFeatureMutation = useCreateFeature()
 const deleteFeatureMutation = useDeleteFeature()
 const assignFeatureMutation = useAssignFeature()
+const updateFeatureStatusMutation = useUpdateFeatureStatus()
 
 const name = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+const featureStatuses = ['Planned', 'Committed', 'Done']
+type WorkDraft = { status: string; assignedToUserId: string }
+const featureDrafts = reactive<Record<string, WorkDraft>>({})
+
+watch(
+  features,
+  (items) => {
+    ;(items || []).forEach((feature: any) => {
+      featureDrafts[feature.id] = {
+        status: feature.status || 'Planned',
+        assignedToUserId: feature.assignedToUserId || '',
+      }
+    })
+  },
+  { immediate: true },
+)
 
 const assignedFeatureCount = computed(() => {
   return features.value?.filter((feature: any) => feature.assignedToUserId).length ?? 0
@@ -145,10 +167,32 @@ const deleteFeature = async (featureId: string) => {
   await deleteFeatureMutation.mutateAsync(featureId)
 }
 
-const assignFeatureFromEvent = async (featureId: string, event: Event) => {
-  const userId = (event.target as HTMLSelectElement).value
-  if (!userId) return
-  await assignFeatureMutation.mutateAsync({ featureId, userId })
+const getFeatureDraft = (feature: any): WorkDraft => {
+  if (!featureDrafts[feature.id]) {
+    featureDrafts[feature.id] = {
+      status: feature.status || 'Planned',
+      assignedToUserId: feature.assignedToUserId || '',
+    }
+  }
+  return featureDrafts[feature.id] as WorkDraft
+}
+
+const isFeatureDirty = (feature: any) => {
+  const draft = getFeatureDraft(feature)
+  return (
+    draft.status !== (feature.status || 'Planned') ||
+    draft.assignedToUserId !== (feature.assignedToUserId || '')
+  )
+}
+
+const saveFeatureChanges = async (feature: any) => {
+  const draft = getFeatureDraft(feature)
+  if (draft.status !== (feature.status || 'Planned')) {
+    await updateFeatureStatusMutation.mutateAsync({ featureId: feature.id, status: draft.status })
+  }
+  if (draft.assignedToUserId && draft.assignedToUserId !== (feature.assignedToUserId || '')) {
+    await assignFeatureMutation.mutateAsync({ featureId: feature.id, userId: draft.assignedToUserId })
+  }
 }
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString()
@@ -207,7 +251,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 }
 
 .feature-table {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid #dfe1e6;
   border-radius: 8px;
 }
@@ -215,11 +259,16 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .feature-table-header,
 .feature-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px 190px 160px;
+  grid-template-columns: minmax(0, 1fr) 140px 190px 230px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid #dfe1e6;
+}
+
+.feature-table-header,
+.feature-row {
+  min-width: 860px;
 }
 
 .feature-table-header {
@@ -266,6 +315,11 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
   .feature-table-header,
   .feature-row {
     grid-template-columns: 1fr;
+  }
+
+  .feature-table-header,
+  .feature-row {
+    min-width: 0;
   }
 
   .feature-actions {

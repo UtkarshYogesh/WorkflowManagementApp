@@ -16,14 +16,12 @@
         <p>{{ task.description || 'No description' }}</p>
         <small>{{ getBacklogTitle(task.backlogItemId) }}</small>
         <div class="task-actions" @click.stop>
-          <button
-            v-for="statusOption in getStatusOptions(task.status)"
-            :key="statusOption"
-            class="small"
-            @click="$emit('change-status', { taskId: task.id, status: statusOption })"
-          >
-            {{ statusOption }}
-          </button>
+          <select v-model="getTaskDraft(task).status">
+            <option v-for="statusOption in taskStatuses" :key="statusOption" :value="statusOption">
+              {{ statusOption }}
+            </option>
+          </select>
+          <button class="small" :disabled="!isTaskDirty(task)" @click="saveTaskStatus(task)">Save</button>
           <button class="small ghost" @click="$emit('delete-task', task.id)">Delete</button>
         </div>
       </article>
@@ -34,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 
 type TaskItem = {
   id: string
@@ -59,20 +57,19 @@ const props = defineProps<{
   onNavigateToTask?: (taskId: string) => void
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (event: 'change-status', payload: { taskId: string; status: string }): void
   (event: 'delete-task', taskId: string): void
 }>()
+
+type TaskDraft = { status: string }
+const taskDrafts = reactive<Record<string, TaskDraft>>({})
 
 const taskStatuses = computed(() => {
   const baseStatuses = props.statuses ? [...props.statuses] : ['Todo', 'In Progress', 'Done']
   const statuses = Array.isArray(props.tasks) ? props.tasks.map((task) => task.status) : []
   return [...baseStatuses, ...new Set(statuses.filter((status) => status && !baseStatuses.includes(status)))]
 })
-
-const getStatusOptions = (currentStatus: string) => {
-  return taskStatuses.value.filter((status) => status !== currentStatus)
-}
 
 const getTasksByStatus = (status: string) => {
   return props.tasks.filter((task) => task.status === status)
@@ -81,6 +78,33 @@ const getTasksByStatus = (status: string) => {
 const getBacklogTitle = (backlogId?: string) => {
   if (!backlogId) return 'No backlog'
   return props.backlogs?.find((backlog) => backlog.id === backlogId)?.title || 'Backlog item'
+}
+
+watch(
+  () => props.tasks,
+  (tasks) => {
+    tasks.forEach((task) => {
+      taskDrafts[task.id] = { status: task.status || 'Todo' }
+    })
+  },
+  { immediate: true },
+)
+
+const getTaskDraft = (task: TaskItem): TaskDraft => {
+  if (!taskDrafts[task.id]) {
+    taskDrafts[task.id] = { status: task.status || 'Todo' }
+  }
+  return taskDrafts[task.id] as TaskDraft
+}
+
+const isTaskDirty = (task: TaskItem) => {
+  return getTaskDraft(task).status !== (task.status || 'Todo')
+}
+
+const saveTaskStatus = (task: TaskItem) => {
+  const draft = getTaskDraft(task)
+  if (draft.status === (task.status || 'Todo')) return
+  emit('change-status', { taskId: task.id, status: draft.status })
 }
 </script>
 
@@ -156,6 +180,17 @@ const getBacklogTitle = (backlogId?: string) => {
   margin-top: 4px;
 }
 
+.task-actions select {
+  min-height: 28px;
+  min-width: 0;
+  flex: 1 1 130px;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172b4d;
+  font-size: 12px;
+}
+
 .small {
   min-height: 28px;
   max-width: 100%;
@@ -166,6 +201,11 @@ const getBacklogTitle = (backlogId?: string) => {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.small:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .small:hover {

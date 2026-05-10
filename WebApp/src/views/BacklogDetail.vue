@@ -15,21 +15,31 @@
       </div>
     </div>
 
-    <div class="detail-grid">
+    <div class="detail-grid" :class="{ 'form-open': showCreateForm }">
       <section class="detail-card">
         <h2>Backlog details</h2>
         <div class="meta-grid">
-          <span>Status <strong>{{ backlog?.status || '-' }}</strong></span>
+          <label>
+            Status
+            <select v-model="backlogDraft.status">
+              <option v-for="status in backlogStatuses" :key="status" :value="status">
+                {{ status }}
+              </option>
+            </select>
+          </label>
           <span>Created <strong>{{ backlog?.createdAt ? formatDate(backlog.createdAt) : '-' }}</strong></span>
           <label>
             Assignee
-            <select :value="backlog?.assignedToUserId || ''" @change="assignBacklogFromEvent($event)">
+            <select v-model="backlogDraft.assignedToUserId">
               <option value="" disabled>Assign user</option>
               <option v-for="user in users" :key="user.userId" :value="user.userId">
                 {{ user.username }}
               </option>
             </select>
           </label>
+          <button class="button primary save-button" :disabled="!isBacklogDirty" @click="saveBacklogChanges">
+            Save
+          </button>
         </div>
       </section>
 
@@ -73,23 +83,30 @@
           <span>Name</span>
           <span>Status</span>
           <span>Assignee</span>
+          <span></span>
         </div>
         <article v-for="task in tasks" :key="task.id" class="work-row" @click="navigateToTask(task.id)">
           <div>
             <strong>{{ task.title }}</strong>
             <small>{{ task.description || 'No description' }}</small>
           </div>
-          <span class="status-pill">{{ task.status }}</span>
+          <select v-model="getTaskDraft(task).status" @click.stop>
+            <option v-for="status in taskStatuses" :key="status" :value="status">
+              {{ status }}
+            </option>
+          </select>
           <select
-            :value="task.assignedToUserId || ''"
+            v-model="getTaskDraft(task).assignedToUserId"
             @click.stop
-            @change="assignTaskFromEvent(task.id, $event)"
           >
             <option value="" disabled>Assign user</option>
             <option v-for="user in users" :key="user.userId" :value="user.userId">
               {{ user.username }}
             </option>
           </select>
+          <button class="button secondary" :disabled="!isTaskDirty(task)" @click.stop="saveTaskChanges(task)">
+            Save
+          </button>
         </article>
       </div>
     </section>
@@ -97,10 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBacklog, useAssignBacklog } from '../composables/useBacklogs'
-import { useTasks, useCreateTask, useAssignTask } from '../composables/useTasks'
+import { useBacklog, useAssignBacklog, useUpdateBacklogStatus } from '../composables/useBacklogs'
+import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
@@ -113,11 +130,52 @@ const { data: users } = useUsers()
 const createTaskMutation = useCreateTask()
 const assignBacklogMutation = useAssignBacklog()
 const assignTaskMutation = useAssignTask()
+const updateBacklogStatusMutation = useUpdateBacklogStatus()
+const updateTaskStatusMutation = useUpdateTaskStatus()
 
 const title = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
 const showCreateForm = ref(false)
+const backlogStatuses = ['Planned', 'Committed', 'Done']
+const taskStatuses = ['Todo', 'In Progress', 'Done']
+type WorkDraft = { status: string; assignedToUserId: string }
+const backlogDraft = reactive({
+  status: 'Planned',
+  assignedToUserId: '',
+})
+const taskDrafts = reactive<Record<string, WorkDraft>>({})
+
+watch(
+  backlog,
+  (value) => {
+    if (!value) return
+    backlogDraft.status = value.status || 'Planned'
+    backlogDraft.assignedToUserId = value.assignedToUserId || ''
+  },
+  { immediate: true },
+)
+
+watch(
+  tasks,
+  (items) => {
+    ;(items || []).forEach((task: any) => {
+      taskDrafts[task.id] = {
+        status: task.status || 'Todo',
+        assignedToUserId: task.assignedToUserId || '',
+      }
+    })
+  },
+  { immediate: true },
+)
+
+const isBacklogDirty = computed(() => {
+  if (!backlog.value) return false
+  return (
+    backlogDraft.status !== (backlog.value.status || 'Planned') ||
+    backlogDraft.assignedToUserId !== (backlog.value.assignedToUserId || '')
+  )
+})
 
 const submitTask = async () => {
   if (!title.value) return
@@ -139,16 +197,45 @@ const navigateToTask = (taskId: string) => {
   router.push(`/tasks/${taskId}`)
 }
 
-const assignBacklogFromEvent = async (event: Event) => {
-  const userId = (event.target as HTMLSelectElement).value
-  if (!userId) return
-  await assignBacklogMutation.mutateAsync({ backlogId, userId })
+const saveBacklogChanges = async () => {
+  if (!backlog.value) return
+  if (backlogDraft.status !== (backlog.value.status || 'Planned')) {
+    await updateBacklogStatusMutation.mutateAsync({ backlogId, status: backlogDraft.status })
+  }
+  if (
+    backlogDraft.assignedToUserId &&
+    backlogDraft.assignedToUserId !== (backlog.value.assignedToUserId || '')
+  ) {
+    await assignBacklogMutation.mutateAsync({ backlogId, userId: backlogDraft.assignedToUserId })
+  }
 }
 
-const assignTaskFromEvent = async (taskId: string, event: Event) => {
-  const userId = (event.target as HTMLSelectElement).value
-  if (!userId) return
-  await assignTaskMutation.mutateAsync({ taskId, userId })
+const getTaskDraft = (task: any): WorkDraft => {
+  if (!taskDrafts[task.id]) {
+    taskDrafts[task.id] = {
+      status: task.status || 'Todo',
+      assignedToUserId: task.assignedToUserId || '',
+    }
+  }
+  return taskDrafts[task.id] as WorkDraft
+}
+
+const isTaskDirty = (task: any) => {
+  const draft = getTaskDraft(task)
+  return (
+    draft.status !== (task.status || 'Todo') ||
+    draft.assignedToUserId !== (task.assignedToUserId || '')
+  )
+}
+
+const saveTaskChanges = async (task: any) => {
+  const draft = getTaskDraft(task)
+  if (draft.status !== (task.status || 'Todo')) {
+    await updateTaskStatusMutation.mutateAsync({ taskId: task.id, status: draft.status })
+  }
+  if (draft.assignedToUserId && draft.assignedToUserId !== (task.assignedToUserId || '')) {
+    await assignTaskMutation.mutateAsync({ taskId: task.id, userId: draft.assignedToUserId })
+  }
 }
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString()
@@ -161,16 +248,21 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 .detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
   margin-bottom: 18px;
 }
 
+.detail-grid.form-open {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
 .meta-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(160px, 1fr) 160px minmax(180px, 1fr) max-content;
   gap: 14px;
+  align-items: end;
   margin-top: 14px;
 }
 
@@ -196,6 +288,10 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
   gap: 8px;
 }
 
+.save-button {
+  align-self: end;
+}
+
 .section-header {
   margin-bottom: 14px;
 }
@@ -206,7 +302,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 }
 
 .work-table {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid #dfe1e6;
   border-radius: 8px;
 }
@@ -214,11 +310,16 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .work-table-header,
 .work-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 200px;
+  grid-template-columns: minmax(0, 1fr) 140px 200px 90px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid #dfe1e6;
+}
+
+.work-table-header,
+.work-row {
+  min-width: 760px;
 }
 
 .work-table-header {
@@ -255,10 +356,16 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 @media (max-width: 980px) {
   .detail-grid,
+  .detail-grid.form-open,
   .meta-grid,
   .work-table-header,
   .work-row {
     grid-template-columns: 1fr;
+  }
+
+  .work-table-header,
+  .work-row {
+    min-width: 0;
   }
 }
 </style>

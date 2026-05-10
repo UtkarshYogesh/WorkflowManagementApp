@@ -1,0 +1,582 @@
+Project Management App Requirements and Feature Checklist
+========================================================
+
+Purpose
+-------
+This document defines the product direction for the project management app.
+Use it as a checklist to verify whether each feature is implemented completely.
+
+The app is a lightweight organization-wide project management system.
+It helps users see projects, create features, plan backlog items, create tasks,
+assign work, update progress, and track status.
+
+
+1. Product Problem
+------------------
+The app solves this problem:
+
+- The organization needs one place to track all projects.
+- Users should be able to see what work is happening across the organization.
+- Admins should control projects.
+- Users should collaborate on features, backlog items, and tasks.
+- Work should have ownership, status, history, and clear permissions.
+
+The app should answer:
+
+- What projects are active?
+- What features are planned or in progress?
+- What backlog items exist under each feature?
+- What tasks need to be done?
+- Who created the work item?
+- Who is assigned or responsible?
+- What is the current status?
+- What is the priority at feature/backlog level?
+- What changed recently?
+
+
+2. Tenant Direction
+-------------------
+Current decision: Single tenant.
+
+Meaning:
+
+- All users belong to the same organization.
+- There is no project member concept.
+- All users can see all projects.
+- All projects belong to the same organization.
+- Multi-tenancy is not required in the first version.
+
+Future possibility:
+
+- If needed later, add Organization/Tenant table.
+- Add TenantId/OrganizationId to users, projects, features, backlog items, tasks,
+  and related tables.
+
+Checklist:
+
+[ ] App works as a single-tenant organization app.
+[ ] There is no ProjectMember requirement.
+[ ] All users can view all projects.
+[ ] Admin can manage all projects.
+
+
+3. User Roles
+-------------
+Initial roles:
+
+1. Admin
+2. User
+
+Admin role:
+
+- Can create projects.
+- Can view all projects.
+- Can update all projects.
+- Can delete/archive all projects.
+- Can create, update, and delete all features.
+- Can create, update, and delete all backlog items.
+- Can create, update, and delete all tasks.
+- Can assign features/tasks to users.
+- Can manage users if user management exists.
+- Can see organization-level reports/dashboard.
+
+User role:
+
+- Can view all projects.
+- Cannot create/update/delete projects.
+- Can create features under any project.
+- Can view all features.
+- Can update features.
+- Can delete only features created by them.
+- Can create backlog items.
+- Can view all backlog items.
+- Can update backlog items.
+- Can delete only backlog items created by them.
+- Can create tasks.
+- Can view all tasks.
+- Can update tasks.
+- Can delete only tasks created by them.
+
+Important ownership rule:
+
+- "Own item" means CreatedByUserId equals the current logged-in user id.
+- AssignedToUserId does not mean ownership.
+- A user may be assigned to an item they did not create.
+- A user can update assigned work, but can delete only items they created.
+
+Checklist:
+
+[ ] Admin role exists.
+[ ] User role exists.
+[ ] Admin can perform all CRUD actions.
+[ ] User can only view projects.
+[ ] User can create/update features.
+[ ] User can delete only own features.
+[ ] User can create/update backlog items.
+[ ] User can delete only own backlog items.
+[ ] User can create/update tasks.
+[ ] User can delete only own tasks.
+[ ] Delete permission checks CreatedByUserId, not AssignedToUserId.
+
+
+4. Main Work Hierarchy
+----------------------
+The app should follow this structure:
+
+Project
+  -> Feature
+      -> Backlog Item
+          -> Task
+
+Notes:
+
+- Project is the top-level container.
+- Feature belongs to a project.
+- Backlog item belongs to a feature and project.
+- Task belongs to a project.
+- Task should usually belong to a feature or backlog item, depending on the workflow.
+
+Checklist:
+
+[ ] Project can contain many features.
+[ ] Feature belongs to one project.
+[ ] Feature can contain many backlog items.
+[ ] Backlog item belongs to one feature.
+[ ] Backlog item can contain many tasks.
+[ ] Task can be connected to project/feature/backlog as required.
+
+
+5. Project
+----------
+Definition:
+
+A project is a large initiative or work area controlled by admin.
+
+Examples:
+
+- CRM System
+- Mobile App
+- Website Redesign
+- Internal HR Portal
+
+Project rules:
+
+- Projects are created by Admin only.
+- Projects are updated by Admin only.
+- Projects are deleted/archived by Admin only.
+- All users can view all projects.
+- Project does not have assigned members.
+- Project does not need ProjectMember mapping in current version.
+
+Suggested project fields:
+
+- Id
+- Name
+- Description
+- Status
+- StartDate
+- DueDate
+- CreatedByUserId
+- CreatedAt
+- UpdatedByUserId
+- UpdatedAt
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Suggested project statuses:
+
+- Planned
+- Active
+- On Hold
+- Completed
+- Archived
+
+Project checklist:
+
+[ ] Admin can create project.
+[ ] Admin can view project list.
+[ ] Admin can view project detail.
+[ ] Admin can update project.
+[ ] Admin can delete/archive project.
+[ ] User can view project list.
+[ ] User can view project detail.
+[ ] User cannot create project.
+[ ] User cannot update project.
+[ ] User cannot delete/archive project.
+[ ] Project has status.
+[ ] Project has CreatedByUserId.
+[ ] Project has CreatedAt.
+[ ] Project has UpdatedByUserId/UpdatedAt.
+[ ] Project supports soft delete/archive.
+
+
+6. Feature
+----------
+Definition:
+
+A feature is a meaningful capability or module inside a project.
+Users can create and manage features because features represent organization work ideas.
+
+Examples:
+
+- Lead Management
+- Customer Profile
+- Sales Pipeline
+- Email Integration
+- Reporting Dashboard
+
+Feature rules:
+
+- Feature belongs to a project.
+- Feature can be created by Admin or User.
+- Feature can be assigned to a user as lead/owner/responsible person.
+- Feature can be updated by Admin or User.
+- Feature can be deleted by Admin.
+- User can delete only features created by them.
+- Feature has priority.
+
+Suggested feature fields:
+
+- Id
+- ProjectId
+- Name
+- Description
+- AssignedToUserId
+- Priority
+- Status
+- CreatedByUserId
+- CreatedAt
+- UpdatedByUserId
+- UpdatedAt
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Suggested feature priorities:
+
+- Low
+- Medium
+- High
+- Critical
+
+Suggested feature statuses:
+
+- Proposed
+- Approved
+- In Progress
+- Done
+- Cancelled
+
+Feature checklist:
+
+[ ] Admin can create feature.
+[ ] User can create feature.
+[ ] Feature requires ProjectId.
+[ ] Feature can be assigned to a user.
+[ ] Feature has priority.
+[ ] Feature has status.
+[ ] Admin can update any feature.
+[ ] User can update feature.
+[ ] Admin can delete/archive any feature.
+[ ] User can delete/archive only own feature.
+[ ] Feature delete checks CreatedByUserId.
+[ ] Feature has CreatedByUserId.
+[ ] Feature has CreatedAt.
+[ ] Feature has UpdatedByUserId/UpdatedAt.
+[ ] Feature supports soft delete/archive.
+
+
+7. Backlog Item
+---------------
+Definition:
+
+A backlog item is planned work under a feature.
+It can represent a story, bug, improvement, or technical work.
+
+Examples:
+
+- As a sales user, I want to import leads from Excel.
+- Fix login timeout issue.
+- Add filters to task list.
+- Improve dashboard loading speed.
+
+Backlog rules:
+
+- Backlog item belongs to a project.
+- Backlog item should belong to a feature.
+- Backlog item can be created by Admin or User.
+- Backlog item can be updated by Admin or User.
+- Backlog item can be deleted by Admin.
+- User can delete only backlog items created by them.
+- Backlog item has priority.
+
+Suggested backlog item fields:
+
+- Id
+- ProjectId
+- FeatureId
+- Title
+- Description
+- Type
+- Priority
+- Status
+- AssignedToUserId
+- CreatedByUserId
+- CreatedAt
+- UpdatedByUserId
+- UpdatedAt
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Suggested backlog item types:
+
+- Story
+- Bug
+- Improvement
+- Technical
+
+Suggested backlog item priorities:
+
+- Low
+- Medium
+- High
+- Critical
+
+Suggested backlog item statuses:
+
+- New
+- Ready
+- In Progress
+- Done
+- Rejected
+
+Backlog checklist:
+
+[ ] Admin can create backlog item.
+[ ] User can create backlog item.
+[ ] Backlog item requires ProjectId.
+[ ] Backlog item requires FeatureId.
+[ ] Backlog item has type.
+[ ] Backlog item has priority.
+[ ] Backlog item has status.
+[ ] Backlog item can be assigned to a user if needed.
+[ ] Admin can update any backlog item.
+[ ] User can update backlog item.
+[ ] Admin can delete/archive any backlog item.
+[ ] User can delete/archive only own backlog item.
+[ ] Backlog delete checks CreatedByUserId.
+[ ] Backlog item has CreatedByUserId.
+[ ] Backlog item has CreatedAt.
+[ ] Backlog item has UpdatedByUserId/UpdatedAt.
+[ ] Backlog item supports soft delete/archive.
+
+
+8. Task
+-------
+Definition:
+
+A task is an execution-level work item.
+Tasks are the smallest work units assigned and updated during day-to-day work.
+
+Examples:
+
+- Create lead import API.
+- Design customer profile page.
+- Write validation for Excel upload.
+- Test task status update flow.
+
+Task rules:
+
+- Task belongs to a project.
+- Task may belong to a feature.
+- Task may belong to a backlog item.
+- Task can be created by Admin or User.
+- Task can be assigned to a user.
+- Task can be updated by Admin or User.
+- Task can be deleted by Admin.
+- User can delete only tasks created by them.
+- Task does not have priority.
+- Priority is handled at feature and backlog level.
+
+Suggested task fields:
+
+- Id
+- ProjectId
+- FeatureId
+- BacklogItemId
+- Title
+- Description
+- AssignedToUserId
+- Status
+- DueDate
+- EstimatedHours
+- ActualHours
+- CreatedByUserId
+- CreatedAt
+- UpdatedByUserId
+- UpdatedAt
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Suggested task statuses:
+
+- To Do
+- In Progress
+- Blocked
+- In Review
+- Done
+- Cancelled
+
+Task checklist:
+
+[ ] Admin can create task.
+[ ] User can create task.
+[ ] Task requires ProjectId.
+[ ] Task can have FeatureId.
+[ ] Task can have BacklogItemId.
+[ ] Task can be assigned to a user.
+[ ] Task has status.
+[ ] Task does not have priority.
+[ ] Admin can update any task.
+[ ] User can update task.
+[ ] Admin can delete/archive any task.
+[ ] User can delete/archive only own task.
+[ ] Task delete checks CreatedByUserId.
+[ ] Task has CreatedByUserId.
+[ ] Task has CreatedAt.
+[ ] Task has UpdatedByUserId/UpdatedAt.
+[ ] Task supports soft delete/archive.
+
+
+9. Delete and Archive Rules
+---------------------------
+Recommended approach: soft delete.
+
+Do not permanently remove rows from the database during normal delete.
+Instead, mark the item deleted.
+
+Suggested soft delete fields:
+
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Delete rules:
+
+- Admin can delete/archive any project, feature, backlog item, or task.
+- User cannot delete projects.
+- User can delete only features created by them.
+- User can delete only backlog items created by them.
+- User can delete only tasks created by them.
+- Delete should check CreatedByUserId.
+- Delete should not check AssignedToUserId.
+
+Checklist:
+
+[ ] Soft delete is used.
+[ ] Deleted items are hidden from normal list pages.
+[ ] Admin delete works for all supported items.
+[ ] User delete works only for own items.
+[ ] User cannot delete project.
+[ ] Delete stores DeletedByUserId.
+[ ] Delete stores DeletedAt.
+
+
+10. Audit Fields
+----------------
+Every main entity should track who created, updated, and deleted it.
+
+Applies to:
+
+- Project
+- Feature
+- Backlog Item
+- Task
+
+Required fields:
+
+- CreatedByUserId
+- CreatedAt
+- UpdatedByUserId
+- UpdatedAt
+- IsDeleted
+- DeletedByUserId
+- DeletedAt
+
+Checklist:
+
+[ ] Project has audit fields.
+[ ] Feature has audit fields.
+[ ] Backlog item has audit fields.
+[ ] Task has audit fields.
+[ ] Create API fills CreatedByUserId and CreatedAt.
+[ ] Update API fills UpdatedByUserId and UpdatedAt.
+[ ] Delete API fills IsDeleted, DeletedByUserId, and DeletedAt.
+
+
+11. Dashboard Direction
+-----------------------
+Dashboard should give quick organization-level visibility.
+
+Suggested dashboard cards:
+
+- Total projects
+- Active projects
+- Total features
+- Features in progress
+- Total backlog items
+- Ready backlog items
+- Total tasks
+- My assigned tasks
+- Blocked tasks
+- Completed tasks
+
+Checklist:
+
+[ ] Admin can see organization-level dashboard.
+[ ] User can see organization-level dashboard.
+[ ] User can see my assigned tasks.
+[ ] Dashboard excludes soft-deleted records.
+
+
+12. Suggested Build Order
+-------------------------
+Recommended implementation order:
+
+1. Confirm user roles and authentication.
+2. Implement project permissions.
+3. Add/update project fields and project status.
+4. Implement feature entity and feature CRUD.
+5. Add feature assignment to user.
+6. Add feature priority and status.
+7. Implement backlog item entity and backlog CRUD.
+8. Add backlog type, priority, and status.
+9. Implement task entity and task CRUD.
+10. Remove task priority if it exists.
+11. Add CreatedByUserId-based delete rules.
+12. Add soft delete fields and filtering.
+13. Add dashboard counts.
+14. Add status history/comments later if needed.
+
+
+13. Important Final Decisions
+-----------------------------
+Current confirmed decisions:
+
+[x] Single tenant for now.
+[x] No project members.
+[x] All users can view all projects.
+[x] Admin does all CRUD on projects.
+[x] User can only see projects.
+[x] User can create/update features.
+[x] Feature can be assigned to a user.
+[x] Feature has priority.
+[x] Backlog item has priority.
+[x] Task does not have priority.
+[x] User can delete only own feature/backlog/task.
+[x] Own item means CreatedByUserId equals current user id.
+[x] Soft delete is recommended.
+

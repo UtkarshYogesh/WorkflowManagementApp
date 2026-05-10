@@ -70,8 +70,9 @@ export function useUpdateFeatureStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: UpdateFeatureStatusPayload) => updateFeatureStatus(variables.featureId, variables.status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["features"] });
+      queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] });
     },
   });
 }

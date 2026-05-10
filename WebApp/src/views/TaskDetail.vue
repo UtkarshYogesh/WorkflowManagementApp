@@ -21,17 +21,25 @@
       <aside class="detail-card">
         <h2>Fields</h2>
         <div class="field-list">
-          <span>Status <strong>{{ task?.status || 'Todo' }}</strong></span>
+          <label>
+            Status
+            <select v-model="taskDraft.status">
+              <option v-for="status in taskStatuses" :key="status" :value="status">
+                {{ status }}
+              </option>
+            </select>
+          </label>
           <span>Created <strong>{{ task?.createdAt ? formatDate(task.createdAt) : '-' }}</strong></span>
           <label>
             Assignee
-            <select :value="task?.assignedToUserId || ''" @change="assignTaskFromEvent($event)">
+            <select v-model="taskDraft.assignedToUserId">
               <option value="" disabled>Assign user</option>
               <option v-for="user in users" :key="user.userId" :value="user.userId">
                 {{ user.username }} ({{ user.email }})
               </option>
             </select>
           </label>
+          <button class="button primary" :disabled="!isTaskDirty" @click="saveTaskChanges">Save</button>
         </div>
       </aside>
     </div>
@@ -39,8 +47,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAssignTask, useTask } from '../composables/useTasks'
+import { useAssignTask, useTask, useUpdateTaskStatus } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
@@ -49,11 +58,39 @@ const taskId = String(route.params.taskId || '')
 const { data: task } = useTask(taskId)
 const { data: users } = useUsers()
 const assignTaskMutation = useAssignTask()
+const updateTaskStatusMutation = useUpdateTaskStatus()
+const taskStatuses = ['Todo', 'In Progress', 'Done']
+const taskDraft = reactive({
+  status: 'Todo',
+  assignedToUserId: '',
+})
 
-const assignTaskFromEvent = async (event: Event) => {
-  const userId = (event.target as HTMLSelectElement).value
-  if (!userId) return
-  await assignTaskMutation.mutateAsync({ taskId, userId })
+watch(
+  task,
+  (value) => {
+    if (!value) return
+    taskDraft.status = value.status || 'Todo'
+    taskDraft.assignedToUserId = value.assignedToUserId || ''
+  },
+  { immediate: true },
+)
+
+const isTaskDirty = computed(() => {
+  if (!task.value) return false
+  return (
+    taskDraft.status !== (task.value.status || 'Todo') ||
+    taskDraft.assignedToUserId !== (task.value.assignedToUserId || '')
+  )
+})
+
+const saveTaskChanges = async () => {
+  if (!task.value) return
+  if (taskDraft.status !== (task.value.status || 'Todo')) {
+    await updateTaskStatusMutation.mutateAsync({ taskId, status: taskDraft.status })
+  }
+  if (taskDraft.assignedToUserId && taskDraft.assignedToUserId !== (task.value.assignedToUserId || '')) {
+    await assignTaskMutation.mutateAsync({ taskId, userId: taskDraft.assignedToUserId })
+  }
 }
 
 const formatDate = (value: string) => new Date(value).toLocaleString()
