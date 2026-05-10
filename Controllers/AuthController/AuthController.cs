@@ -20,8 +20,8 @@ namespace TaskManagement.Api.Controllers.AuthController
         {
             try
             {
-                await authService.RegisterUser(userRequest);
-                return Ok(new { Message = "User registered successfully." });
+                var authResponse = await authService.RegisterUser(userRequest);
+                return Ok(authResponse);
             }
             catch (Exception ex)
             {

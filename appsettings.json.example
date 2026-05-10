@@ -5,9 +5,13 @@
       "Microsoft.AspNetCore": "Warning"
     }
   },
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=taskmanager.db"
+  },
   "Jwt": {
-    "SecretKey": "your-super-secret-key-at-least-32-chars!!",
+    "SecretKey": "your-super-secret-key-at-least-32-chars-long-for-security!!",
     "Issuer": "TaskManagerAPI",
     "Audience": "TaskManagerClient"
-  }
+  },
+  "AllowedHosts": "*"
 }

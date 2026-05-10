@@ -48,6 +48,10 @@ __screenshots__/
 
 # Database files
 *.db
+
+# Sensitive configuration files
+
+appsettings.Development.json
 *.sqlite
 *.sqlite3
 

@@ -22,7 +22,7 @@ namespace TaskManagement.Api.Services.Implementations
 
         }
 
-        public async Task RegisterUser(RegisterUserRequest userRequest)
+        public async Task<AuthResponse> RegisterUser(RegisterUserRequest userRequest)
         {
             var user = new User
             {
@@ -38,6 +38,7 @@ namespace TaskManagement.Api.Services.Implementations
             appDbContext.Users.Add(user);
             await appDbContext.SaveChangesAsync();
 
+            return await GenerateTokens(user);
         }
 
         public async Task<AuthResponse> LoginUser(LoginUserRequest loginUserRequest)
@@ -88,6 +89,9 @@ namespace TaskManagement.Api.Services.Implementations
 
             return new AuthResponse
             {
+                Id = user.UserId.ToString(),
+                Username = user.Username,
+                Email = user.Email,
                 AccessToken = accessToken,
                 RefreshToken = refreshToken
             };

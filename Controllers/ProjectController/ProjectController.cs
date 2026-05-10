@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.Api.DTOs.Project;
 using TaskManagement.Api.Services.Implementations;
@@ -6,6 +7,7 @@ using TaskManagement.Api.Services.Interfaces;
 
 namespace TaskManagement.Api.Controllers.ProjectController
 {
+    [Authorize]
     [Route("api/projects")]
     [ApiController]
     public class ProjectController : ControllerBase

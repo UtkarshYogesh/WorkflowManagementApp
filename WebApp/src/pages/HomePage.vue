@@ -1,30 +1,19 @@
 <template>
-  <!-- <div v-if="isAuthenticated()" class="app-shell">
-    <div>Alredy log in</div>
+  <div class="app-shell">
     <Sidebar />
     <main class="app-main">
       <router-view />
     </main>
   </div>
-  <div v-else class="auth-view">
-    <div>Hello, please log in.</div>
-    <router-view />
-  </div> -->
-  <div>
-    <router-view />
-  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAuth } from './composables/useAuth'
-import Sidebar from './components/layout/SideBar.vue'
-import type router from './router'
-
-const { isAuthenticated } = useAuth()
+import { useAuth } from '@/composables/useAuth'
+import Sidebar from '@/components/layout/SideBar.vue'
 </script>
 
-<!-- <style scoped>
+<style scoped>
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -174,4 +163,4 @@ const { isAuthenticated } = useAuth()
 .link-button:hover {
   text-decoration: underline;
 }
-</style> -->
+</style>

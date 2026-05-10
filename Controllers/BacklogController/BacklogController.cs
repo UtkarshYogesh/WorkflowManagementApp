@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TaskManagement.Api.DTOs.Backlog;
 using TaskManagement.Api.Services.Interfaces;
 
 namespace TaskManagement.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api")]
     public class BacklogItemsController : ControllerBase
