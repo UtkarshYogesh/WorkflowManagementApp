@@ -1,15 +1,15 @@
 <template>
   <section class="page dashboard-page">
-    <div class="hero-panel">
+    <div class="page-header">
       <div>
-        <p class="eyebrow">Project operations</p>
-        <h1>Manage projects, features, backlogs, and tasks.</h1>
-        <p class="hero-copy">
-          Create your next project with Azure DevOps-style hierarchy and move tasks through a
-          lightweight kanban board.
-        </p>
+        <p class="eyebrow">Overview</p>
+        <h1>Dashboard</h1>
+        <p class="subtitle">A quick view of active work across projects, features, backlog, and tasks.</p>
       </div>
-      <router-link class="button primary" to="/projects">Go to Projects</router-link>
+      <div class="page-actions">
+        <router-link class="button primary" to="/projects">New project</router-link>
+        <router-link class="button secondary" to="/tasks">View tasks</router-link>
+      </div>
     </div>
 
     <div class="stats-grid">
@@ -19,137 +19,216 @@
       </article>
       <article class="stat-card">
         <span>Features</span>
-        <strong>{{ featureCount }}</strong>
+        <strong>{{ features?.length ?? 0 }}</strong>
       </article>
       <article class="stat-card">
         <span>Backlog items</span>
-        <strong>{{ backlogCount }}</strong>
+        <strong>{{ backlogs?.length ?? 0 }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Tasks</span>
+        <strong>{{ tasks?.length ?? 0 }}</strong>
       </article>
     </div>
 
-    <section class="projects-section">
-      <div class="section-title">
-        <h2>Active projects</h2>
-        <p>Open a project to define features and plan backlog items.</p>
-      </div>
-      <div v-if="isLoading" class="empty-state">Loading projects…</div>
-      <div v-else-if="!projects?.length" class="empty-state">
-        No projects found. Create one on the Projects page.
-      </div>
-      <div class="cards-grid" v-else>
-        <article class="project-card" v-for="project in projects" :key="project.projectId">
-          <div>
-            <h3>{{ project.name }}</h3>
-            <p>{{ project.description || 'No description yet.' }}</p>
+    <div class="dashboard-grid">
+      <section class="panel work-panel">
+        <div class="section-title">
+          <h2>Task status</h2>
+          <p>Current task distribution.</p>
+        </div>
+        <div v-if="isTasksLoading" class="empty-state">Loading tasks...</div>
+        <div v-else-if="!tasks?.length" class="empty-state">No tasks created yet.</div>
+        <div v-else class="status-list">
+          <div v-for="item in taskStatusSummary" :key="item.status" class="status-row">
+            <span>{{ item.status }}</span>
+            <div class="status-meter">
+              <span :style="{ width: `${item.percent}%` }"></span>
+            </div>
+            <strong>{{ item.count }}</strong>
           </div>
-          <div class="project-meta">
-            <span>{{ new Date(project.createdAt).toLocaleDateString() }}</span>
-            <router-link class="link-button" :to="`/projects/${project.projectId}`"
-              >Open</router-link
-            >
-          </div>
-        </article>
-      </div>
-    </section>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>Recent projects</h2>
+          <p>Open a project to plan features and backlog items.</p>
+        </div>
+        <div v-if="isProjectsLoading" class="empty-state">Loading projects...</div>
+        <div v-else-if="!projects?.length" class="empty-state">No projects found.</div>
+        <div v-else class="project-list">
+          <router-link
+            v-for="project in recentProjects"
+            :key="project.projectId"
+            class="project-row"
+            :to="`/projects/${project.projectId}`"
+          >
+            <span>
+              <strong>{{ project.name }}</strong>
+              <small>{{ project.description || 'No description' }}</small>
+            </span>
+            <small>{{ formatDate(project.createdAt) }}</small>
+          </router-link>
+        </div>
+      </section>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useProjects } from '../composables/useProjects'
+import { useFeatures } from '../composables/useFeatures'
+import { useBacklogs } from '../composables/useBacklogs'
+import { useTasks } from '../composables/useTasks'
 
-const { data: projects, isLoading } = useProjects()
-const featureCount = computed(() => 0)
-const backlogCount = computed(() => 0)
+const { data: projects, isLoading: isProjectsLoading } = useProjects()
+const { data: features } = useFeatures()
+const { data: backlogs } = useBacklogs()
+const { data: tasks, isLoading: isTasksLoading } = useTasks()
+
+const recentProjects = computed(() => {
+  return [...(projects.value || [])]
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5)
+})
+
+const taskStatusSummary = computed(() => {
+  const list = tasks.value || []
+  const counts = list.reduce((acc: Record<string, number>, task: any) => {
+    const status = task.status || 'Todo'
+    acc[status] = (acc[status] || 0) + 1
+    return acc
+  }, {})
+
+  return Object.entries(counts as Record<string, number>).map(([status, count]) => ({
+    status,
+    count,
+    percent: list.length ? Math.round((count / list.length) * 100) : 0,
+  }))
+})
+
+const formatDate = (value: string) => new Date(value).toLocaleDateString()
 </script>
 
 <style scoped>
-.page {
-  padding: 24px 0;
-}
-.hero-panel {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 28px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  margin-bottom: 28px;
-}
-.eyebrow {
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: #60a5fa;
-  margin-bottom: 12px;
-}
-.hero-copy {
-  color: #cbd5e1;
-  max-width: 680px;
-  margin-top: 12px;
-}
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 28px;
-}
-.stat-card {
-  padding: 22px;
-  border-radius: 18px;
-  background: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.stat-card span {
-  color: #94a3b8;
-}
-.stat-card strong {
-  font-size: 2.2rem;
-}
-.projects-section {
-  padding: 0;
-}
-.section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
   margin-bottom: 18px;
 }
-.project-card {
-  padding: 22px;
-  border-radius: 18px;
-  background: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
+
+.stat-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+}
+
+.stat-card span {
+  color: #5e6c84;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stat-card strong {
+  color: #172b4d;
+  font-size: 30px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.8fr);
+  gap: 18px;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.section-title {
+  margin-bottom: 16px;
+}
+
+.section-title p {
+  margin: 4px 0 0;
+  color: #5e6c84;
+}
+
+.status-list {
+  display: grid;
+  gap: 14px;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 36px;
   align-items: center;
+  gap: 12px;
+  color: #44546f;
+  font-weight: 700;
 }
-.project-card h3 {
-  margin: 0;
+
+.status-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f1f2f4;
 }
-.project-meta {
+
+.status-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0c66e4;
+}
+
+.project-list {
+  display: grid;
+  gap: 8px;
+}
+
+.project-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  text-align: right;
-}
-.link-button {
-  color: #38bdf8;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  color: #172b4d;
   text-decoration: none;
 }
-.empty-state {
-  padding: 28px;
-  border-radius: 18px;
-  background: #111827;
-  color: #94a3b8;
+
+.project-row:hover {
+  background: #f7f8f9;
 }
-.button.primary {
-  align-self: flex-start;
+
+.project-row strong,
+.project-row small {
+  display: block;
+}
+
+.project-row small {
+  color: #5e6c84;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .stats-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

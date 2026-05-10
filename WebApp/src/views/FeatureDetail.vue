@@ -8,28 +8,33 @@
           <span>{{ feature?.name || 'Feature' }}</span>
         </p>
         <h1>{{ feature?.name || 'Loading feature...' }}</h1>
-        <p class="subtitle">Manage backlog items for this feature.</p>
-        <div class="assignment-row">
-          <span>Feature assignee</span>
-          <select
-            :value="feature?.assignedToUserId || ''"
-            @change="assignFeatureFromEvent($event)"
-          >
-            <option value="" disabled>Assign user</option>
-            <option v-for="user in users" :key="user.userId" :value="user.userId">
-              {{ user.username }}
-            </option>
-          </select>
-        </div>
+        <p class="subtitle">{{ feature?.description || 'Manage backlog items for this feature.' }}</p>
       </div>
       <div class="page-actions">
-        <button class="button" @click="showCreateForm = !showCreateForm">Create Backlog</button>
+        <button class="button primary" @click="showCreateForm = !showCreateForm">Create backlog</button>
       </div>
     </div>
 
-    <div v-if="showCreateForm" class="form-panel">
-      <div class="form-card">
-        <h3>Add a backlog item</h3>
+    <div class="detail-grid">
+      <section class="detail-card">
+        <h2>Feature details</h2>
+        <div class="meta-grid">
+          <span>Status <strong>{{ feature?.status || '-' }}</strong></span>
+          <span>Created <strong>{{ feature?.createdAt ? formatDate(feature.createdAt) : '-' }}</strong></span>
+          <label>
+            Assignee
+            <select :value="feature?.assignedToUserId || ''" @change="assignFeatureFromEvent($event)">
+              <option value="" disabled>Assign user</option>
+              <option v-for="user in users" :key="user.userId" :value="user.userId">
+                {{ user.username }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <aside v-if="showCreateForm" class="form-card">
+        <h2>Add backlog item</h2>
         <label>
           Title
           <input v-model="title" placeholder="Backlog title" />
@@ -47,47 +52,47 @@
             </option>
           </select>
         </label>
-        <button class="button" :disabled="!title" @click="submitBacklog">Create backlog</button>
-        <button class="button ghost" @click="showCreateForm = false">Cancel</button>
-      </div>
+        <div class="form-actions">
+          <button class="button primary" :disabled="!title" @click="submitBacklog">Create backlog</button>
+          <button class="button ghost" @click="showCreateForm = false">Cancel</button>
+        </div>
+      </aside>
     </div>
 
-    <div class="backlogs-section">
-      <h2>Backlogs</h2>
-      <div v-if="isBacklogsLoading" class="empty-state">Loading backlogs...</div>
-      <div v-else-if="!backlogs?.length" class="empty-state">
-        No backlogs yet. Create your first backlog.
-      </div>
-      <div v-else class="backlogs-table">
-        <div class="table-header">
-          <div class="header-cell name-header">Name</div>
-          <div class="header-cell status-header">Status</div>
-          <div class="header-cell assignee-header">Assignee</div>
-        </div>
-        <div
-          v-for="backlog in backlogs"
-          :key="backlog.id"
-          class="table-row"
-          @click="navigateToBacklog(backlog.id)"
-        >
-          <div class="table-cell name-cell">{{ backlog.title }}</div>
-          <div class="table-cell status-cell">
-            <span class="status-pill">{{ backlog.status }}</span>
-          </div>
-          <div class="table-cell assignee-cell" @click.stop>
-            <select
-              :value="backlog.assignedToUserId || ''"
-              @change="assignBacklogFromEvent(backlog.id, $event)"
-            >
-              <option value="" disabled>Assign user</option>
-              <option v-for="user in users" :key="user.userId" :value="user.userId">
-                {{ user.username }}
-              </option>
-            </select>
-          </div>
+    <section class="panel">
+      <div class="section-header">
+        <div>
+          <h2>Backlog items</h2>
+          <p>Break this feature into deliverable work items.</p>
         </div>
       </div>
-    </div>
+      <div v-if="isBacklogsLoading" class="empty-state">Loading backlog items...</div>
+      <div v-else-if="!backlogs?.length" class="empty-state">No backlog items yet.</div>
+      <div v-else class="work-table">
+        <div class="work-table-header">
+          <span>Name</span>
+          <span>Status</span>
+          <span>Assignee</span>
+        </div>
+        <article v-for="backlog in backlogs" :key="backlog.id" class="work-row" @click="navigateToBacklog(backlog.id)">
+          <div>
+            <strong>{{ backlog.title }}</strong>
+            <small>{{ backlog.description || 'No description' }}</small>
+          </div>
+          <span class="status-pill">{{ backlog.status }}</span>
+          <select
+            :value="backlog.assignedToUserId || ''"
+            @click.stop
+            @change="assignBacklogFromEvent(backlog.id, $event)"
+          >
+            <option value="" disabled>Assign user</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }}
+            </option>
+          </select>
+        </article>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -95,13 +100,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFeature, useAssignFeature } from '../composables/useFeatures'
-import {
-  useBacklogs,
-  useCreateBacklog,
-  useDeleteBacklog,
-  useUpdateBacklogStatus,
-  useAssignBacklog,
-} from '../composables/useBacklogs'
+import { useBacklogs, useCreateBacklog, useAssignBacklog } from '../composables/useBacklogs'
 import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
@@ -112,8 +111,6 @@ const { data: feature } = useFeature(featureId)
 const { data: backlogs, isLoading: isBacklogsLoading } = useBacklogs(featureId)
 const { data: users } = useUsers()
 const createBacklogMutation = useCreateBacklog()
-const deleteBacklogMutation = useDeleteBacklog()
-const updateBacklogStatusMutation = useUpdateBacklogStatus()
 const assignFeatureMutation = useAssignFeature()
 const assignBacklogMutation = useAssignBacklog()
 
@@ -153,188 +150,115 @@ const assignBacklogFromEvent = async (backlogId: string, event: Event) => {
   if (!userId) return
   await assignBacklogMutation.mutateAsync({ backlogId, userId })
 }
+
+const formatDate = (value: string) => new Date(value).toLocaleDateString()
 </script>
 
 <style scoped>
-.page {
-  padding: 28px 32px;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 28px;
-}
-.breadcrumb {
-  color: #a0aec0;
-  font-size: 0.95rem;
-  margin-bottom: 8px;
-}
 .breadcrumb span {
-  margin: 0 8px;
+  margin: 0 6px;
 }
-.subtitle {
-  color: #cbd5e1;
-  margin-top: 8px;
-}
-.assignment-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  color: #cbd5e1;
-}
-.assignment-row select,
-.assignee-cell select,
-.form-card select {
-  min-height: 38px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f8fafc;
-  padding: 0 10px;
-}
+
 .detail-grid {
   display: grid;
-  gap: 20px;
-  grid-template-columns: 1.4fr 0.9fr;
-  margin-bottom: 24px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
 }
-.detail-card {
-  padding: 22px;
-  border-radius: 18px;
-  background: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.16);
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
 }
-.form-card input,
-.form-card textarea,
-.form-card select {
-  width: 100%;
-  margin-top: 8px;
-  border-radius: 12px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f8fafc;
-  padding: 10px 12px;
+
+.meta-grid span,
+.meta-grid label {
+  display: grid;
+  gap: 7px;
+  color: #5e6c84;
+  font-size: 13px;
+  font-weight: 700;
 }
+
+.meta-grid strong {
+  color: #172b4d;
+}
+
 .form-card textarea {
   min-height: 110px;
 }
-.button {
-  margin-top: 14px;
+
+.form-actions {
+  display: flex;
+  gap: 8px;
 }
-.status-pill {
-  background: rgba(59, 130, 246, 0.14);
-  color: #bfdbfe;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
+
+.section-header {
+  margin-bottom: 14px;
 }
-.list-panel {
-  margin-top: 12px;
+
+.section-header p {
+  margin: 4px 0 0;
+  color: #5e6c84;
 }
-.backlogs-section {
-  margin-top: 12px;
-}
-.backlogs-section h2 {
-  color: #f8fafc;
-  margin-bottom: 20px;
-}
-.backlogs-table {
-  background: #0f172a;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+
+.work-table {
   overflow: hidden;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
 }
-.table-header {
-  display: flex;
-  background: rgba(148, 163, 184, 0.05);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-}
-.header-cell {
-  padding: 16px;
-  font-weight: 600;
-  color: #cbd5e1;
-  flex: 1;
-}
-.name-header {
-  flex: 2;
-}
-.status-header {
-  flex: 1;
-}
-.assignee-header {
-  flex: 1.2;
-}
-.table-row {
-  display: flex;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-.table-row:hover {
-  background: rgba(148, 163, 184, 0.03);
-}
-.table-row:last-child {
-  border-bottom: none;
-}
-.table-cell {
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-.name-cell {
-  flex: 2;
-  color: #f8fafc;
-  font-weight: 500;
-}
-.status-cell {
-  flex: 1;
-}
-.assignee-cell {
-  flex: 1.2;
-}
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(59, 130, 246, 0.14);
-  color: #bfdbfe;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.cards-grid {
+
+.work-table-header,
+.work-row {
   display: grid;
-  gap: 14px;
-}
-.card {
-  padding: 18px;
-  border-radius: 18px;
-  background: #0f172a;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) 120px 200px;
   align-items: center;
   gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dfe1e6;
 }
-.card-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
+
+.work-table-header {
+  background: #f7f8f9;
+  color: #44546f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
-.empty-state {
-  padding: 32px;
-  border-radius: 16px;
-  background: #111827;
-  color: #94a3b8;
+
+.work-row {
+  cursor: pointer;
+}
+
+.work-row:hover {
+  background: #f7f8f9;
+}
+
+.work-row:last-child {
+  border-bottom: 0;
+}
+
+.work-row strong,
+.work-row small {
+  display: block;
+}
+
+.work-row small {
+  overflow: hidden;
+  color: #5e6c84;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .detail-grid,
+  .meta-grid,
+  .work-table-header,
+  .work-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

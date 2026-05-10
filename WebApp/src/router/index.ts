@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { isAuthenticated } from '../services/authApi'
+import { restoreSession } from '../services/authApi'
 
 // View Imports
 import Dashboard from '../views/Dashboard.vue'
@@ -45,8 +45,8 @@ const router = createRouter({
 })
 
 // Route guard for authentication
-router.beforeEach((to, from, next) => {
-  const isUserAuthenticated = isAuthenticated()
+router.beforeEach(async (to, from, next) => {
+  const isUserAuthenticated = await restoreSession()
   const isPublicRoute = to.meta.isPublic === true
 
   if (!isUserAuthenticated && !isPublicRoute) {

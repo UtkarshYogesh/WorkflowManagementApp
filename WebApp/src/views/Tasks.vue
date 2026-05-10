@@ -1,124 +1,129 @@
 <template>
   <section class="page tasks">
     <div class="page-header">
-      <h1>Tasks</h1>
-      <p class="subtitle">Manage all tasks across backlogs.</p>
+      <div>
+        <p class="eyebrow">Work items</p>
+        <h1>Tasks</h1>
+        <p class="subtitle">A compact list of all executable tasks across backlog items.</p>
+      </div>
     </div>
 
-    <div class="list-panel">
+    <section class="panel">
       <div v-if="isTasksLoading" class="empty-state">Loading tasks...</div>
-      <div v-else-if="tasks?.length === 0" class="empty-state">
-        No tasks yet. Create one in a backlog.
-      </div>
-      <div v-else class="cards-grid">
-        <article v-for="task in tasks" :key="task.id" class="card">
-          <div class="card-header">
-            <h3>{{ task.title }}</h3>
-            <span class="status-pill">{{ task.status }}</span>
+      <div v-else-if="!tasks?.length" class="empty-state">No tasks yet. Create one in a backlog.</div>
+      <div v-else class="task-table">
+        <div class="task-table-header">
+          <span>Task</span>
+          <span>Status</span>
+          <span>Backlog</span>
+          <span></span>
+        </div>
+        <article v-for="task in tasks" :key="task.id" class="task-row">
+          <div class="task-name">
+            <strong>{{ task.title }}</strong>
+            <small>{{ task.description || 'No description' }}</small>
           </div>
-          <p>{{ task.description }}</p>
-          <div class="card-actions">
-            <router-link :to="`/tasks/${task.id}`">View details</router-link>
-          </div>
+          <span class="status-pill">{{ task.status }}</span>
+          <span class="muted">{{ getBacklogTitle(task.backlogItemId) }}</span>
+          <router-link :to="`/tasks/${task.id}`" class="button secondary">Open</router-link>
         </article>
       </div>
-    </div>
+    </section>
   </section>
 </template>
 
 <script setup lang="ts">
+import { useBacklogs } from '../composables/useBacklogs'
 import { useTasks } from '../composables/useTasks'
 
 const { data: tasks, isLoading: isTasksLoading } = useTasks()
+const { data: backlogs } = useBacklogs()
+
+const getBacklogTitle = (backlogId?: string) => {
+  if (!backlogId) return 'No backlog'
+  return backlogs.value?.find((backlog: any) => backlog.id === backlogId)?.title || 'Backlog item'
+}
 </script>
 
 <style scoped>
-.page {
-  padding: 28px 32px;
+.panel {
+  overflow-x: auto;
 }
-.page-header {
-  margin-bottom: 28px;
+
+.task-table {
+  min-width: 760px;
+  overflow: hidden;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
 }
-h1 {
-  color: #f8fafc;
-  margin-bottom: 8px;
-}
-.subtitle {
-  color: #cbd5e1;
-  margin-top: 8px;
-}
-.list-panel {
-  padding: 0;
-}
-.empty-state {
-  padding: 28px;
-  border-radius: 20px;
-  background: #111827;
-  color: #94a3b8;
-  text-align: center;
-}
-.cards-grid {
+
+.task-table-header,
+.task-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-.card {
-  padding: 16px;
-  border-radius: 16px;
-  background: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  transition: border-color 0.2s ease;
-}
-.card:hover {
-  border-color: rgba(37, 99, 235, 0.3);
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 120px 220px 90px;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dfe1e6;
 }
-.card-header h3 {
-  margin: 0;
-  color: #f8fafc;
-  font-size: 0.95rem;
-  flex: 1;
+
+.task-table-header {
+  background: #f7f8f9;
+  color: #44546f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
-.status-pill {
-  font-size: 0.75rem;
-  color: #cbd5e1;
-  background: rgba(148, 163, 184, 0.14);
-  border-radius: 999px;
-  padding: 4px 10px;
+
+.task-row:last-child {
+  border-bottom: 0;
+}
+
+.task-row:hover {
+  background: #f7f8f9;
+}
+
+.task-row .button {
+  justify-self: end;
+}
+
+.task-name {
+  min-width: 0;
+}
+
+.task-name strong,
+.task-name small {
+  display: block;
+}
+
+.task-name small,
+.muted {
+  overflow: hidden;
+  color: #5e6c84;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.card p {
-  color: #cbd5e1;
-  font-size: 0.9rem;
-  margin: 8px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+
+.status-pill {
+  justify-self: start;
 }
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-.card-actions a {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
-  text-decoration: none;
-  font-size: 0.85rem;
-  text-align: center;
-  transition: background 0.2s ease;
-}
-.card-actions a:hover {
-  background: rgba(37, 99, 235, 0.2);
+
+@media (max-width: 900px) {
+  .panel {
+    overflow-x: visible;
+  }
+
+  .task-table {
+    min-width: 0;
+  }
+
+  .task-table-header,
+  .task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .task-row .button {
+    justify-self: start;
+  }
 }
 </style>

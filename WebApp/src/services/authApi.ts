@@ -1,6 +1,6 @@
 import api from './api'
 import { setAccessToken, getAccessToken, setUser, getUser, clearTokens } from './tokenStore'
-import { setRefreshTokenCookie, clearRefreshTokenCookie } from './cookieHelper'
+import { setRefreshTokenCookie, getRefreshTokenCookie, clearRefreshTokenCookie } from './cookieHelper'
 import { isTokenExpired } from './jwtHelper'
 
 export interface LoginRequest {
@@ -70,17 +70,45 @@ export const isAuthenticated = () => {
 // Refresh token API call
 export const refreshToken = async () => {
   try {
-    const response = await api.post<{ token: string; refreshToken: string }>('/auth/refresh')
+    const storedRefreshToken = getRefreshTokenCookie()
+    if (!storedRefreshToken) {
+      throw new Error('No refresh token available')
+    }
+
+    const response = await api.post<AuthResponse>('/auth/refresh', JSON.stringify(storedRefreshToken))
 
     if (response.data) {
-      setAccessToken(response.data.token)
+      setAccessToken(response.data.accessToken)
+      setUser({
+        id: response.data.id,
+        username: response.data.username,
+        email: response.data.email
+      })
       setRefreshTokenCookie(response.data.refreshToken)
-      return response.data.token
+      return response.data
     }
   } catch (error) {
     console.error('Token refresh failed:', error)
     clearTokens()
     clearRefreshTokenCookie()
     throw error
+  }
+}
+
+export const restoreSession = async () => {
+  const token = getAccessToken()
+  if (token && !isTokenExpired(token)) {
+    return true
+  }
+
+  if (!getRefreshTokenCookie()) {
+    return false
+  }
+
+  try {
+    await refreshToken()
+    return true
+  } catch {
+    return false
   }
 }

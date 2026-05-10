@@ -2,23 +2,34 @@
   <section class="page project-detail-page">
     <div class="page-header">
       <div>
-        <p class="eyebrow">Project details</p>
+        <p class="breadcrumb">
+          <router-link to="/projects">Projects</router-link>
+          <span>/</span>
+          <span>{{ project?.name || 'Project' }}</span>
+        </p>
         <h1>{{ project?.name || 'Project details' }}</h1>
-        <p class="subtitle">Manage the feature roadmap for this project.</p>
+        <p class="subtitle">{{ project?.description || 'No description available.' }}</p>
       </div>
       <router-link class="button secondary" to="/projects">Back to projects</router-link>
     </div>
 
-    <div class="top-panel">
-      <div class="info-card">
-        <h2>Project overview</h2>
-        <p>{{ project?.description || 'No description available.' }}</p>
-        <p class="meta">
-          Created on
-          {{ project?.createdAt ? new Date(project.createdAt).toLocaleDateString() : '-' }}
-        </p>
-      </div>
-      <div class="form-card">
+    <div class="summary-grid">
+      <article class="summary-card">
+        <span>Features</span>
+        <strong>{{ features?.length ?? 0 }}</strong>
+      </article>
+      <article class="summary-card">
+        <span>Created</span>
+        <strong>{{ project?.createdAt ? formatDate(project.createdAt) : '-' }}</strong>
+      </article>
+      <article class="summary-card">
+        <span>Assigned features</span>
+        <strong>{{ assignedFeatureCount }}</strong>
+      </article>
+    </div>
+
+    <div class="project-workspace">
+      <aside class="form-card">
         <h2>Add feature</h2>
         <label>
           Name
@@ -37,54 +48,57 @@
             </option>
           </select>
         </label>
-        <button class="button" :disabled="!name" @click="submitFeature">Create feature</button>
-      </div>
-    </div>
+        <button class="button primary" :disabled="!name" @click="submitFeature">Create feature</button>
+      </aside>
 
-    <div class="features-grid">
-      <div class="section-header">
-        <h2>Features</h2>
-        <p>Open a feature to add backlog items and move tasks.</p>
-      </div>
-      <div v-if="isFeaturesLoading" class="empty-state">Loading features…</div>
-      <div v-else-if="!features?.length" class="empty-state">
-        No features yet. Add one to start your backlog.
-      </div>
-      <div class="cards-grid" v-else>
-        <article v-for="feature in features" :key="feature.id" class="feature-card">
+      <section class="feature-panel panel">
+        <div class="section-header">
           <div>
-            <h3>{{ feature.name }}</h3>
-            <p>{{ feature.description || 'No description.' }}</p>
-            <p class="assignee-label">Assigned to {{ getUserName(feature.assignedToUserId) }}</p>
+            <h2>Features</h2>
+            <p>Plan large pieces of work and break them into backlog items.</p>
           </div>
-          <div class="feature-footer">
-            <span class="status">{{ feature.status }}</span>
+        </div>
+        <div v-if="isFeaturesLoading" class="empty-state">Loading features...</div>
+        <div v-else-if="!features?.length" class="empty-state">
+          No features yet. Add one to start your backlog.
+        </div>
+        <div v-else class="feature-table">
+          <div class="feature-table-header">
+            <span>Feature</span>
+            <span>Status</span>
+            <span>Assignee</span>
+            <span></span>
+          </div>
+          <article v-for="feature in features" :key="feature.id" class="feature-row">
+            <div class="feature-name">
+              <strong>{{ feature.name }}</strong>
+              <small>{{ feature.description || 'No description.' }}</small>
+            </div>
+            <span class="status-pill">{{ feature.status }}</span>
+            <select
+              :value="feature.assignedToUserId || ''"
+              @change="assignFeatureFromEvent(feature.id, $event)"
+            >
+              <option value="" disabled>Assign user</option>
+              <option v-for="user in users" :key="user.userId" :value="user.userId">
+                {{ user.username }}
+              </option>
+            </select>
             <div class="feature-actions">
-              <select
-                class="assignee-select"
-                :value="feature.assignedToUserId || ''"
-                @click.stop
-                @change="assignFeatureFromEvent(feature.id, $event)"
-              >
-                <option value="" disabled>Assign user</option>
-                <option v-for="user in users" :key="user.userId" :value="user.userId">
-                  {{ user.username }}
-                </option>
-              </select>
-              <router-link :to="`/projects/${projectId}/features/${feature.id}`" class="link-button"
-                >Open</router-link
-              >
+              <router-link :to="`/projects/${projectId}/features/${feature.id}`" class="button secondary">
+                Open
+              </router-link>
               <button class="button ghost" @click="deleteFeature(feature.id)">Delete</button>
             </div>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
+      </section>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProject } from '../composables/useProjects'
 import {
@@ -107,6 +121,10 @@ const assignFeatureMutation = useAssignFeature()
 const name = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+
+const assignedFeatureCount = computed(() => {
+  return features.value?.filter((feature: any) => feature.assignedToUserId).length ?? 0
+})
 
 const submitFeature = async () => {
   if (!name.value) return
@@ -133,125 +151,125 @@ const assignFeatureFromEvent = async (featureId: string, event: Event) => {
   await assignFeatureMutation.mutateAsync({ featureId, userId })
 }
 
-const getUserName = (userId?: string | null) => {
-  if (!userId) return 'Unassigned'
-  return users.value?.find((user) => user.userId === userId)?.username || 'Unknown user'
-}
+const formatDate = (value: string) => new Date(value).toLocaleDateString()
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 18px;
-  margin-bottom: 28px;
+.breadcrumb span {
+  margin: 0 6px;
 }
-.eyebrow {
-  color: #60a5fa;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 10px;
-}
-.subtitle {
-  color: #cbd5e1;
-  margin-top: 8px;
-}
-.top-panel {
+
+.summary-grid {
   display: grid;
-  grid-template-columns: 1.3fr 0.95fr;
-  gap: 20px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
 }
-.info-card,
-.form-card {
-  padding: 24px;
-  border-radius: 20px;
-  background: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+
+.summary-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+  background: #ffffff;
 }
-.info-card .meta {
-  margin-top: 14px;
-  color: #94a3b8;
+
+.summary-card span {
+  color: #5e6c84;
+  font-size: 13px;
+  font-weight: 700;
 }
-.form-card label {
-  display: block;
-  margin-bottom: 16px;
-  color: #cbd5e1;
+
+.summary-card strong {
+  color: #172b4d;
+  font-size: 22px;
 }
-.form-card input,
-.form-card textarea,
-.form-card select {
-  width: 100%;
-  margin-top: 8px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f8fafc;
+
+.project-workspace {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
+
 .form-card textarea {
   min-height: 120px;
 }
-.features-grid {
-  padding-top: 16px;
-}
+
 .section-header {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-.cards-grid {
+
+.section-header p {
+  margin: 4px 0 0;
+  color: #5e6c84;
+}
+
+.feature-table {
+  overflow: hidden;
+  border: 1px solid #dfe1e6;
+  border-radius: 8px;
+}
+
+.feature-table-header,
+.feature-row {
   display: grid;
-  gap: 16px;
-}
-.feature-card {
-  padding: 20px;
-  border-radius: 18px;
-  background: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-}
-.feature-footer {
-  display: flex;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) 110px 190px 160px;
   align-items: center;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dfe1e6;
 }
-.status {
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(59, 130, 246, 0.14);
-  color: #bfdbfe;
+
+.feature-table-header {
+  background: #f7f8f9;
+  color: #44546f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
-.assignee-label {
-  color: #94a3b8;
-  margin-top: 10px;
+
+.feature-row:last-child {
+  border-bottom: 0;
 }
-.assignee-select {
-  min-height: 38px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #111827;
-  color: #f8fafc;
-  padding: 0 10px;
+
+.feature-row:hover {
+  background: #f7f8f9;
 }
+
+.feature-name {
+  min-width: 0;
+}
+
+.feature-name strong,
+.feature-name small {
+  display: block;
+}
+
+.feature-name small {
+  overflow: hidden;
+  color: #5e6c84;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .feature-actions {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
-.link-button {
-  color: #38bdf8;
-  text-decoration: none;
-}
-.button.ghost {
-  background: transparent;
-  color: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-}
-.empty-state {
-  padding: 24px;
-  border-radius: 18px;
-  background: #111827;
-  color: #94a3b8;
+
+@media (max-width: 1100px) {
+  .summary-grid,
+  .project-workspace,
+  .feature-table-header,
+  .feature-row {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-actions {
+    justify-content: flex-start;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { getAccessToken, setAccessToken, clearTokens } from './tokenStore'
+import { getAccessToken, setAccessToken, setUser, clearTokens } from './tokenStore'
 import { getRefreshTokenCookie, setRefreshTokenCookie, clearRefreshTokenCookie } from './cookieHelper'
 import { isTokenExpired } from './jwtHelper'
 
@@ -33,15 +33,27 @@ const refreshAccessToken = async () => {
       throw new Error('No refresh token available')
     }
 
-    const response = await axios.post<{ accessToken: string; refreshToken: string }>(
+    const response = await axios.post<{
+      id: string
+      username: string
+      email: string
+      accessToken: string
+      refreshToken: string
+    }>(
       'https://localhost:7062/api/auth/refresh',
-      { refreshToken }
+      JSON.stringify(refreshToken),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     )
 
-    const { accessToken, refreshToken: newRefreshToken } = response.data
+    const { id, username, email, accessToken, refreshToken: newRefreshToken } = response.data
 
     // Update tokens
     setAccessToken(accessToken)
+    setUser({ id, username, email })
     setRefreshTokenCookie(newRefreshToken)
 
     return accessToken

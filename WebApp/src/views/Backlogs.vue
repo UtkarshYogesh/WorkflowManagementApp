@@ -2,66 +2,57 @@
   <section class="page backlogs">
     <div class="page-header">
       <div>
-        <h1>Backlogs</h1>
-        <p class="subtitle">Manage all backlog items across features.</p>
+        <p class="eyebrow">Execution</p>
+        <h1>Backlog</h1>
+        <p class="subtitle">Review backlog items and the tasks attached to them.</p>
       </div>
       <div class="page-actions">
-        <button
-          class="button secondary"
-          @click="viewMode = viewMode === 'kanban' ? 'list' : 'kanban'"
-        >
-          {{ viewMode === 'kanban' ? 'List View' : 'Kanban View' }}
+        <button class="button secondary" @click="viewMode = viewMode === 'board' ? 'list' : 'board'">
+          {{ viewMode === 'board' ? 'List view' : 'Board view' }}
         </button>
       </div>
     </div>
 
-    <div v-if="viewMode === 'list'" class="list-panel">
-      <div v-if="isBacklogsLoading" class="empty-state">Loading backlogs...</div>
-      <div v-else-if="backlogs?.length === 0" class="empty-state">
-        No backlogs yet. Create one in a feature.
-      </div>
-      <div v-else class="backlogs-list">
-        <article v-for="backlog in backlogs" :key="backlog.id" class="backlog-item">
-          <div class="backlog-header" @click="toggleBacklog(backlog.id)">
-            <div class="backlog-info">
-              <h3 @click.stop="navigateToBacklog(backlog.id)" class="clickable-title">
-                {{ backlog.title }}
-              </h3>
-              <span class="status-pill">{{ backlog.status }}</span>
-            </div>
-            <div class="dropdown-icon">
-              <span :class="{ rotated: expandedBacklogs.includes(backlog.id) }">▼</span>
+    <div v-if="viewMode === 'list'" class="panel">
+      <div v-if="isBacklogsLoading" class="empty-state">Loading backlog...</div>
+      <div v-else-if="!backlogs?.length" class="empty-state">No backlog items yet. Create one in a feature.</div>
+      <div v-else class="backlog-list">
+        <article v-for="backlog in backlogs" :key="backlog.id" class="backlog-row">
+          <div class="backlog-main">
+            <button class="toggle-button" @click="toggleBacklog(backlog.id)">
+              {{ expandedBacklogs.includes(backlog.id) ? '-' : '+' }}
+            </button>
+            <div>
+              <h3 @click="navigateToBacklog(backlog.id)" class="clickable-title">{{ backlog.title }}</h3>
+              <p>{{ backlog.description || 'No description' }}</p>
             </div>
           </div>
-          <p class="backlog-description">{{ backlog.description }}</p>
+          <span class="status-pill">{{ backlog.status }}</span>
+          <span class="muted">{{ getTasksForBacklog(backlog.id).length }} tasks</span>
 
-          <div v-if="expandedBacklogs.includes(backlog.id)" class="tasks-section">
-            <div v-if="getTasksForBacklog(backlog.id).length === 0" class="no-tasks">
-              No tasks yet.
-            </div>
-            <div v-else class="tasks-list">
-              <div v-for="task in getTasksForBacklog(backlog.id)" :key="task.id" class="task-item">
-                <span @click="navigateToTask(task.id)" class="task-title clickable-title">{{
-                  task.title
-                }}</span>
-                <span class="task-status">{{ task.status }}</span>
-              </div>
-            </div>
+          <div v-if="expandedBacklogs.includes(backlog.id)" class="nested-list">
+            <div v-if="getTasksForBacklog(backlog.id).length === 0" class="nested-empty">No tasks yet.</div>
+            <button
+              v-for="task in getTasksForBacklog(backlog.id)"
+              :key="task.id"
+              class="nested-row"
+              @click="navigateToTask(task.id)"
+            >
+              <span>{{ task.title }}</span>
+              <span class="status-pill">{{ task.status }}</span>
+            </button>
           </div>
         </article>
       </div>
     </div>
 
-    <div v-else class="kanban-section">
-      <h2>Backlog Kanban</h2>
-      <div v-if="isBacklogsLoading || isTasksLoading" class="empty-state">Loading...</div>
-      <div v-else-if="!backlogs?.length" class="empty-state">
-        No backlogs yet. Create one in a feature.
-      </div>
+    <div v-else class="board-panel">
+      <div v-if="isBacklogsLoading || isTasksLoading" class="empty-state">Loading board...</div>
+      <div v-else-if="!backlogs?.length" class="empty-state">No backlog items yet. Create one in a feature.</div>
       <KanbanBoard
         v-else
         :backlogs="backlogs"
-        :tasks="allTasks"
+        :tasks="allTasks || []"
         :statuses="['Todo', 'In Progress', 'Done']"
         :on-navigate-to-backlog="navigateToBacklog"
         :on-navigate-to-task="navigateToTask"
@@ -73,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBacklogs } from '../composables/useBacklogs'
 import { useTasks, useUpdateTaskStatus, useDeleteTask } from '../composables/useTasks'
@@ -85,7 +76,7 @@ const { data: allTasks, isLoading: isTasksLoading } = useTasks()
 const updateTaskStatusMutation = useUpdateTaskStatus()
 const deleteTaskMutation = useDeleteTask()
 
-const viewMode = ref<'list' | 'kanban'>('list')
+const viewMode = ref<'list' | 'board'>('list')
 const expandedBacklogs = ref<string[]>([])
 
 const toggleBacklog = (backlogId: string) => {
@@ -119,105 +110,119 @@ const deleteTask = async (taskId: string) => {
 </script>
 
 <style scoped>
-.backlogs-list {
+.panel,
+.board-panel {
+  padding: 18px;
+  overflow: hidden;
+}
+
+.board-panel {
+  overflow-x: auto;
+}
+
+.backlog-list {
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
-.backlog-item {
-  padding: 20px;
-  border-radius: 18px;
-  background: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-}
-
-.backlog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  padding: 12px 0;
-}
-
-.backlog-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.backlog-info h3 {
-  margin: 0;
-  color: #f8fafc;
-}
-
-.backlog-description {
-  color: #cbd5e1;
-  margin: 8px 0 16px 0;
-}
-
-.dropdown-icon {
-  transition: transform 0.2s ease;
-}
-
-.dropdown-icon .rotated {
-  transform: rotate(180deg);
-}
-
-.tasks-section {
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
-  padding-top: 16px;
-}
-
-.no-tasks {
-  color: #94a3b8;
-  font-style: italic;
-}
-
-.tasks-list {
+.backlog-row {
   display: grid;
-  gap: 8px;
-}
-
-.task-item {
-  display: flex;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) max-content 110px;
+  gap: 14px;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(148, 163, 184, 0.05);
+  padding: 14px;
+  border: 1px solid #dfe1e6;
   border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.08);
+  background: #ffffff;
 }
 
-.task-title {
-  color: #f8fafc;
-  font-weight: 500;
+.backlog-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
 }
 
-.task-status {
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.14);
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
+.backlog-main > div {
+  min-width: 0;
 }
 
-.kanban-section {
-  margin-top: 12px;
+.backlog-main h3 {
+  margin: 0;
+  font-size: 15px;
 }
 
-.kanban-section h2 {
-  color: #f8fafc;
-  margin-bottom: 20px;
+.backlog-main p {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #5e6c84;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.clickable-title {
+.toggle-button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  background: #f7f8f9;
+  color: #44546f;
   cursor: pointer;
-  transition: color 0.2s ease;
 }
 
-.clickable-title:hover {
-  color: #38bdf8;
+.muted {
+  color: #5e6c84;
+  font-size: 13px;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.nested-list {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  padding: 10px 0 0 40px;
+}
+
+.nested-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  background: #f7f8f9;
+  color: #172b4d;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.nested-row span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nested-empty {
+  color: #5e6c84;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .backlog-row {
+    grid-template-columns: 1fr;
+  }
+
+  .muted {
+    justify-self: start;
+  }
+
+  .nested-list {
+    padding-left: 0;
+  }
 }
 </style>
