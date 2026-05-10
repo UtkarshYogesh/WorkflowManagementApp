@@ -37,6 +37,7 @@ const refreshAccessToken = async () => {
       id: string
       username: string
       email: string
+      role?: string
       accessToken: string
       refreshToken: string
     }>(
@@ -49,11 +50,11 @@ const refreshAccessToken = async () => {
       }
     )
 
-    const { id, username, email, accessToken, refreshToken: newRefreshToken } = response.data
+    const { id, username, email, role, accessToken, refreshToken: newRefreshToken } = response.data
 
     // Update tokens
     setAccessToken(accessToken)
-    setUser({ id, username, email })
+    setUser({ id, username, email, role })
     setRefreshTokenCookie(newRefreshToken)
 
     return accessToken

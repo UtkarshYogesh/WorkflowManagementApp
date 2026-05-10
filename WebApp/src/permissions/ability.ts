@@ -3,7 +3,7 @@ import { useAbility } from '@casl/vue'
 import { getStoredUser } from '../services/authApi'
 
 export type AppAction = 'manage' | 'read' | 'create' | 'update' | 'delete'
-export type AppSubject = 'all' | 'Project' | 'Feature' | 'Backlog' | 'Task'
+export type AppSubject = 'all' | 'Project' | 'Feature' | 'Backlog' | 'Task' | 'User'
 export type AppAbility = MongoAbility<[AppAction, AppSubject]>
 
 export type AbilityUser = {
@@ -25,6 +25,7 @@ export function defineAbilityFor(user: AbilityUser | null | undefined): AppAbili
     return build()
   }
 
+  can('read', 'User')
   can('read', 'Project')
   can(['read', 'create', 'update'], 'Feature')
   can(['read', 'create', 'update'], 'Backlog')

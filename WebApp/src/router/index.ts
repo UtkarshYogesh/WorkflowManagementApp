@@ -12,6 +12,7 @@ import Backlogs from '../views/Backlogs.vue'
 import BacklogDetail from '../views/BacklogDetail.vue'
 import Tasks from '../views/Tasks.vue'
 import TaskDetail from '../views/TaskDetail.vue'
+import UserSettings from '../views/UserSettings.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import HomePage from '@/pages/HomePage.vue'
@@ -35,6 +36,7 @@ const routes: RouteRecordRaw[] = [
       { path: '/backlogs/:backlogId', component: BacklogDetail, meta: { permission: { action: 'read', subject: 'Backlog' } } },
       { path: '/tasks', component: Tasks, meta: { permission: { action: 'read', subject: 'Task' } } },
       { path: '/tasks/:taskId', component: TaskDetail, meta: { permission: { action: 'read', subject: 'Task' } } },
+      { path: '/settings/users', component: UserSettings, meta: { permission: { action: 'manage', subject: 'User' } } },
     ]
   },
   

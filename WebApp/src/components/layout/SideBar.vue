@@ -28,6 +28,10 @@
     </nav>
 
     <div class="sidebar-footer">
+      <router-link v-if="ability.can('manage', 'User')" class="nav-link settings-link" to="/settings/users">
+        <span class="nav-icon">U</span>
+        User settings
+      </router-link>
       <div v-if="user" class="user-info">
         <span class="avatar">{{ userInitials }}</span>
         <span>
@@ -43,8 +47,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuth } from '../../composables/useAuth'
+import { useAppAbility } from '../../permissions/ability'
 
 const { user, logout } = useAuth()
+const ability = useAppAbility()
 
 const userInitials = computed(() => {
   const name = user.value?.username || 'User'
@@ -158,6 +164,10 @@ const handleLogout = () => {
   margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid #dfe1e6;
+}
+
+.settings-link {
+  margin-bottom: 2px;
 }
 
 .user-info {
