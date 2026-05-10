@@ -6,6 +6,7 @@ import {
   createBacklog,
   deleteBacklog,
   updateBacklogStatus,
+  assignBacklogToUser,
 } from "../services/backlogApi";
 
 export function useBacklogs(featureId?: string) {
@@ -40,6 +41,11 @@ type UpdateBacklogStatusPayload = {
   status: string;
 };
 
+type AssignBacklogPayload = {
+  backlogId: string;
+  userId: string;
+};
+
 export function useCreateBacklog() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -67,6 +73,18 @@ export function useUpdateBacklogStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["backlogs"] });
       queryClient.invalidateQueries({ queryKey: ["backlog"] });
+    },
+  });
+}
+
+export function useAssignBacklog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: AssignBacklogPayload) =>
+      assignBacklogToUser(variables.backlogId, variables.userId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["backlogs"] });
+      queryClient.invalidateQueries({ queryKey: ["backlog", variables.backlogId] });
     },
   });
 }

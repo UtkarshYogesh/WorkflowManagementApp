@@ -28,6 +28,15 @@
           Description
           <textarea v-model="description" placeholder="Feature description"></textarea>
         </label>
+        <label>
+          Assignee
+          <select v-model="assignedToUserId">
+            <option value="">Unassigned</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }} ({{ user.email }})
+            </option>
+          </select>
+        </label>
         <button class="button" :disabled="!name" @click="submitFeature">Create feature</button>
       </div>
     </div>
@@ -46,10 +55,22 @@
           <div>
             <h3>{{ feature.name }}</h3>
             <p>{{ feature.description || 'No description.' }}</p>
+            <p class="assignee-label">Assigned to {{ getUserName(feature.assignedToUserId) }}</p>
           </div>
           <div class="feature-footer">
             <span class="status">{{ feature.status }}</span>
             <div class="feature-actions">
+              <select
+                class="assignee-select"
+                :value="feature.assignedToUserId || ''"
+                @click.stop
+                @change="assignFeatureFromEvent(feature.id, $event)"
+              >
+                <option value="" disabled>Assign user</option>
+                <option v-for="user in users" :key="user.userId" :value="user.userId">
+                  {{ user.username }}
+                </option>
+              </select>
               <router-link :to="`/projects/${projectId}/features/${feature.id}`" class="link-button"
                 >Open</router-link
               >
@@ -66,30 +87,55 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProject } from '../composables/useProjects'
-import { useFeatures, useCreateFeature, useDeleteFeature } from '../composables/useFeatures'
+import {
+  useFeatures,
+  useCreateFeature,
+  useDeleteFeature,
+  useAssignFeature,
+} from '../composables/useFeatures'
+import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
 const projectId = String(route.params.projectId || '')
 const { data: project } = useProject(projectId)
 const { data: features, isLoading: isFeaturesLoading } = useFeatures(projectId)
+const { data: users } = useUsers()
 const createFeatureMutation = useCreateFeature()
 const deleteFeatureMutation = useDeleteFeature()
+const assignFeatureMutation = useAssignFeature()
 
 const name = ref('')
 const description = ref('')
+const assignedToUserId = ref('')
 
 const submitFeature = async () => {
   if (!name.value) return
   await createFeatureMutation.mutateAsync({
     projectId,
-    data: { name: name.value, description: description.value },
+    data: {
+      name: name.value,
+      description: description.value,
+      assignedToUserId: assignedToUserId.value || null,
+    },
   })
   name.value = ''
   description.value = ''
+  assignedToUserId.value = ''
 }
 
 const deleteFeature = async (featureId: string) => {
   await deleteFeatureMutation.mutateAsync(featureId)
+}
+
+const assignFeatureFromEvent = async (featureId: string, event: Event) => {
+  const userId = (event.target as HTMLSelectElement).value
+  if (!userId) return
+  await assignFeatureMutation.mutateAsync({ featureId, userId })
+}
+
+const getUserName = (userId?: string | null) => {
+  if (!userId) return 'Unassigned'
+  return users.value?.find((user) => user.userId === userId)?.username || 'Unknown user'
 }
 </script>
 
@@ -134,7 +180,8 @@ const deleteFeature = async (featureId: string) => {
   color: #cbd5e1;
 }
 .form-card input,
-.form-card textarea {
+.form-card textarea,
+.form-card select {
   width: 100%;
   margin-top: 8px;
   padding: 12px;
@@ -174,6 +221,18 @@ const deleteFeature = async (featureId: string) => {
   border-radius: 999px;
   background: rgba(59, 130, 246, 0.14);
   color: #bfdbfe;
+}
+.assignee-label {
+  color: #94a3b8;
+  margin-top: 10px;
+}
+.assignee-select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #111827;
+  color: #f8fafc;
+  padding: 0 10px;
 }
 .feature-actions {
   display: flex;

@@ -14,7 +14,7 @@ import {
 import { setAccessToken, setUser } from '../services/tokenStore'
 import { setRefreshTokenCookie } from '../services/cookieHelper'
 
-const user = ref<Omit<AuthResponse, 'token' | 'refreshToken'> | null>(getStoredUser())
+const user = ref<Omit<AuthResponse, 'accessToken' | 'refreshToken'> | null>(getStoredUser())
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -26,10 +26,10 @@ export const useAuth = () => {
     error.value = null
     try {
       const response = await registerUser(data)
-      const { token, refreshToken, ...userData } = response.data
+      const { accessToken, refreshToken, ...userData } = response.data
 
       // Store tokens and user in memory
-      setAccessToken(token)
+      setAccessToken(accessToken)
       setUser(userData)
       setRefreshTokenCookie(refreshToken)
 

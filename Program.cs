@@ -52,6 +52,7 @@ builder.Services.AddScoped<IFeatureInterface, FeatureService>();
 builder.Services.AddScoped<IBacklogInterface, BacklogService>();
 builder.Services.AddScoped<ITaskInterface, TaskService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserInterface, UserService>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddControllers();
 

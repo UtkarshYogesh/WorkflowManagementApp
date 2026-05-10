@@ -9,6 +9,18 @@
         </p>
         <h1>{{ feature?.name || 'Loading feature...' }}</h1>
         <p class="subtitle">Manage backlog items for this feature.</p>
+        <div class="assignment-row">
+          <span>Feature assignee</span>
+          <select
+            :value="feature?.assignedToUserId || ''"
+            @change="assignFeatureFromEvent($event)"
+          >
+            <option value="" disabled>Assign user</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }}
+            </option>
+          </select>
+        </div>
       </div>
       <div class="page-actions">
         <button class="button" @click="showCreateForm = !showCreateForm">Create Backlog</button>
@@ -26,6 +38,15 @@
           Description
           <textarea v-model="description" placeholder="Backlog description"></textarea>
         </label>
+        <label>
+          Assignee
+          <select v-model="assignedToUserId">
+            <option value="">Unassigned</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }} ({{ user.email }})
+            </option>
+          </select>
+        </label>
         <button class="button" :disabled="!title" @click="submitBacklog">Create backlog</button>
         <button class="button ghost" @click="showCreateForm = false">Cancel</button>
       </div>
@@ -41,6 +62,7 @@
         <div class="table-header">
           <div class="header-cell name-header">Name</div>
           <div class="header-cell status-header">Status</div>
+          <div class="header-cell assignee-header">Assignee</div>
         </div>
         <div
           v-for="backlog in backlogs"
@@ -52,6 +74,17 @@
           <div class="table-cell status-cell">
             <span class="status-pill">{{ backlog.status }}</span>
           </div>
+          <div class="table-cell assignee-cell" @click.stop>
+            <select
+              :value="backlog.assignedToUserId || ''"
+              @change="assignBacklogFromEvent(backlog.id, $event)"
+            >
+              <option value="" disabled>Assign user</option>
+              <option v-for="user in users" :key="user.userId" :value="user.userId">
+                {{ user.username }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -61,13 +94,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useFeature } from '../composables/useFeatures'
+import { useFeature, useAssignFeature } from '../composables/useFeatures'
 import {
   useBacklogs,
   useCreateBacklog,
   useDeleteBacklog,
   useUpdateBacklogStatus,
+  useAssignBacklog,
 } from '../composables/useBacklogs'
+import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,27 +110,48 @@ const featureId = String(route.params.featureId || '')
 
 const { data: feature } = useFeature(featureId)
 const { data: backlogs, isLoading: isBacklogsLoading } = useBacklogs(featureId)
+const { data: users } = useUsers()
 const createBacklogMutation = useCreateBacklog()
 const deleteBacklogMutation = useDeleteBacklog()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
+const assignFeatureMutation = useAssignFeature()
+const assignBacklogMutation = useAssignBacklog()
 
 const title = ref('')
 const description = ref('')
+const assignedToUserId = ref('')
 const showCreateForm = ref(false)
 
 const submitBacklog = async () => {
   if (!title.value) return
   await createBacklogMutation.mutateAsync({
     featureId,
-    data: { title: title.value, description: description.value },
+    data: {
+      title: title.value,
+      description: description.value,
+      assignedToUserId: assignedToUserId.value || null,
+    },
   })
   title.value = ''
   description.value = ''
+  assignedToUserId.value = ''
   showCreateForm.value = false
 }
 
 const navigateToBacklog = (backlogId: string) => {
   router.push(`/backlogs/${backlogId}`)
+}
+
+const assignFeatureFromEvent = async (event: Event) => {
+  const userId = (event.target as HTMLSelectElement).value
+  if (!userId) return
+  await assignFeatureMutation.mutateAsync({ featureId, userId })
+}
+
+const assignBacklogFromEvent = async (backlogId: string, event: Event) => {
+  const userId = (event.target as HTMLSelectElement).value
+  if (!userId) return
+  await assignBacklogMutation.mutateAsync({ backlogId, userId })
 }
 </script>
 
@@ -122,6 +178,24 @@ const navigateToBacklog = (backlogId: string) => {
   color: #cbd5e1;
   margin-top: 8px;
 }
+.assignment-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: #cbd5e1;
+}
+.assignment-row select,
+.assignee-cell select,
+.form-card select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0 10px;
+}
 .detail-grid {
   display: grid;
   gap: 20px;
@@ -135,7 +209,8 @@ const navigateToBacklog = (backlogId: string) => {
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 .form-card input,
-.form-card textarea {
+.form-card textarea,
+.form-card select {
   width: 100%;
   margin-top: 8px;
   border-radius: 12px;
@@ -190,6 +265,9 @@ const navigateToBacklog = (backlogId: string) => {
 .status-header {
   flex: 1;
 }
+.assignee-header {
+  flex: 1.2;
+}
 .table-row {
   display: flex;
   border-bottom: 1px solid rgba(148, 163, 184, 0.08);
@@ -215,6 +293,9 @@ const navigateToBacklog = (backlogId: string) => {
 }
 .status-cell {
   flex: 1;
+}
+.assignee-cell {
+  flex: 1.2;
 }
 .status-pill {
   display: inline-flex;

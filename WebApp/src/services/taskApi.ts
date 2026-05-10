@@ -6,3 +6,4 @@ export const createTask = (backlogId: string, data: any) => api.post(`/backlog-i
 export const deleteTask = (taskId: string) => api.delete(`/tasks/${taskId}`);
 export const updateTaskStatus = (taskId: string, newStatus: any) => api.patch(`/tasks/${taskId}/status`, newStatus);
 export const fetchTaskById = (taskId: string) => api.get(`/tasks/${taskId}`);
+export const assignTaskToUser = (taskId: string, userId: string) => api.patch(`/tasks/${taskId}/assign/${userId}`);

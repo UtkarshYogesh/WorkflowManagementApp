@@ -9,6 +9,18 @@
         </p>
         <h1>{{ backlog?.title || 'Loading backlog...' }}</h1>
         <p class="subtitle">Manage tasks for this backlog item.</p>
+        <div class="assignment-row">
+          <span>Backlog assignee</span>
+          <select
+            :value="backlog?.assignedToUserId || ''"
+            @change="assignBacklogFromEvent($event)"
+          >
+            <option value="" disabled>Assign user</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }}
+            </option>
+          </select>
+        </div>
       </div>
       <div class="page-actions">
         <button class="button" @click="showCreateForm = !showCreateForm">Create Task</button>
@@ -26,6 +38,15 @@
           Description
           <textarea v-model="description" placeholder="Task details"></textarea>
         </label>
+        <label>
+          Assignee
+          <select v-model="assignedToUserId">
+            <option value="">Unassigned</option>
+            <option v-for="user in users" :key="user.userId" :value="user.userId">
+              {{ user.username }} ({{ user.email }})
+            </option>
+          </select>
+        </label>
         <button class="button" :disabled="!title" @click="submitTask">Add task</button>
         <button class="button ghost" @click="showCreateForm = false">Cancel</button>
       </div>
@@ -41,6 +62,7 @@
         <div class="table-header">
           <div class="header-cell name-header">Name</div>
           <div class="header-cell status-header">Status</div>
+          <div class="header-cell assignee-header">Assignee</div>
         </div>
         <div
           v-for="task in tasks"
@@ -52,6 +74,17 @@
           <div class="table-cell status-cell">
             <span class="status-pill">{{ task.status }}</span>
           </div>
+          <div class="table-cell assignee-cell" @click.stop>
+            <select
+              :value="task.assignedToUserId || ''"
+              @change="assignTaskFromEvent(task.id, $event)"
+            >
+              <option value="" disabled>Assign user</option>
+              <option v-for="user in users" :key="user.userId" :value="user.userId">
+                {{ user.username }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -61,8 +94,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBacklog } from '../composables/useBacklogs'
-import { useTasks, useCreateTask } from '../composables/useTasks'
+import { useBacklog, useAssignBacklog } from '../composables/useBacklogs'
+import { useTasks, useCreateTask, useAssignTask } from '../composables/useTasks'
+import { useUsers } from '../composables/useUsers'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,25 +104,46 @@ const backlogId = String(route.params.backlogId || '')
 
 const { data: backlog } = useBacklog(backlogId)
 const { data: tasks, isLoading: isTasksLoading } = useTasks(backlogId)
+const { data: users } = useUsers()
 const createTaskMutation = useCreateTask()
+const assignBacklogMutation = useAssignBacklog()
+const assignTaskMutation = useAssignTask()
 
 const title = ref('')
 const description = ref('')
+const assignedToUserId = ref('')
 const showCreateForm = ref(false)
 
 const submitTask = async () => {
   if (!title.value) return
   await createTaskMutation.mutateAsync({
     backlogId,
-    data: { title: title.value, description: description.value },
+    data: {
+      title: title.value,
+      description: description.value,
+      assignedToUserId: assignedToUserId.value || null,
+    },
   })
   title.value = ''
   description.value = ''
+  assignedToUserId.value = ''
   showCreateForm.value = false
 }
 
 const navigateToTask = (taskId: string) => {
   router.push(`/tasks/${taskId}`)
+}
+
+const assignBacklogFromEvent = async (event: Event) => {
+  const userId = (event.target as HTMLSelectElement).value
+  if (!userId) return
+  await assignBacklogMutation.mutateAsync({ backlogId, userId })
+}
+
+const assignTaskFromEvent = async (taskId: string, event: Event) => {
+  const userId = (event.target as HTMLSelectElement).value
+  if (!userId) return
+  await assignTaskMutation.mutateAsync({ taskId, userId })
 }
 </script>
 
@@ -111,6 +166,24 @@ const navigateToTask = (taskId: string) => {
 .breadcrumb span {
   margin: 0 8px;
 }
+.assignment-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: #cbd5e1;
+}
+.assignment-row select,
+.assignee-cell select,
+.form-card select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0 10px;
+}
 .detail-panel {
   display: grid;
   gap: 20px;
@@ -124,7 +197,8 @@ const navigateToTask = (taskId: string) => {
   border: 1px solid rgba(148, 163, 184, 0.12);
 }
 .form-card input,
-.form-card textarea {
+.form-card textarea,
+.form-card select {
   width: 100%;
   margin-top: 8px;
   border-radius: 12px;
@@ -166,6 +240,9 @@ const navigateToTask = (taskId: string) => {
 .status-header {
   flex: 1;
 }
+.assignee-header {
+  flex: 1.2;
+}
 .table-row {
   display: flex;
   border-bottom: 1px solid rgba(148, 163, 184, 0.08);
@@ -191,6 +268,9 @@ const navigateToTask = (taskId: string) => {
 }
 .status-cell {
   flex: 1;
+}
+.assignee-cell {
+  flex: 1.2;
 }
 .status-pill {
   display: inline-flex;

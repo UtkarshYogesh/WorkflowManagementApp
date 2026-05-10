@@ -15,3 +15,5 @@ export const createFeature = (projectId: string, data: any) =>
 export const deleteFeature = (featureId: string) => api.delete(`/features/${featureId}`);
 export const updateFeatureStatus = (featureId: string, newStatus: any) =>
   api.patch(`/features/${featureId}/status`, newStatus);
+export const assignFeatureToUser = (featureId: string, userId: string) =>
+  api.patch(`/features/${featureId}/assign/${userId}`);

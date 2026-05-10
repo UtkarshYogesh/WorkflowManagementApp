@@ -6,6 +6,7 @@ import {
   deleteTask,
   updateTaskStatus,
   fetchTaskById,
+  assignTaskToUser,
 } from "../services/taskApi";
 
 export function useTasks(backlogId?: string) {
@@ -51,6 +52,19 @@ export function useUpdateTaskStatus() {
     mutationFn: ({ taskId, status }: { taskId: string; status: string }) => updateTaskStatus(taskId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useAssignTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, userId }: { taskId: string; userId: string }) =>
+      assignTaskToUser(taskId, userId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
     },
   });
 }

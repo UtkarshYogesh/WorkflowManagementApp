@@ -17,3 +17,5 @@ export const deleteBacklog = (id: string) =>
 
 export const updateBacklogStatus = (backlogId: string, newStatus: any) =>
   api.patch(`/backlog-items/${backlogId}/status`, newStatus);
+export const assignBacklogToUser = (backlogId: string, userId: string) =>
+  api.patch(`/backlog-items/${backlogId}/assign/${userId}`);

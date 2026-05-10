@@ -6,6 +6,7 @@ import {
   createFeature,
   deleteFeature,
   updateFeatureStatus,
+  assignFeatureToUser,
 } from "../services/featureApi";
 
 export function useFeatures(projectId?: string) {
@@ -40,6 +41,11 @@ type UpdateFeatureStatusPayload = {
   status: string;
 };
 
+type AssignFeaturePayload = {
+  featureId: string;
+  userId: string;
+};
+
 export function useCreateFeature() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -66,6 +72,18 @@ export function useUpdateFeatureStatus() {
     mutationFn: (variables: UpdateFeatureStatusPayload) => updateFeatureStatus(variables.featureId, variables.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["features"] });
+    },
+  });
+}
+
+export function useAssignFeature() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: AssignFeaturePayload) =>
+      assignFeatureToUser(variables.featureId, variables.userId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["features"] });
+      queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] });
     },
   });
 }
