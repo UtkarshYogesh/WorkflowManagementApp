@@ -22,7 +22,7 @@
             </option>
           </select>
           <button class="small" :disabled="!isTaskDirty(task)" @click="saveTaskStatus(task)">Save</button>
-          <button class="small ghost" @click="$emit('delete-task', task.id)">Delete</button>
+          <button v-if="canDeleteTask(task)" class="small ghost" @click="$emit('delete-task', task.id)">Delete</button>
         </div>
       </article>
 
@@ -55,6 +55,7 @@ const props = defineProps<{
   statuses?: string[]
   onNavigateToBacklog?: (backlogId: string) => void
   onNavigateToTask?: (taskId: string) => void
+  canDeleteTask?: (task: TaskItem) => boolean
 }>()
 
 const emit = defineEmits<{
@@ -106,6 +107,8 @@ const saveTaskStatus = (task: TaskItem) => {
   if (draft.status === (task.status || 'Todo')) return
   emit('change-status', { taskId: task.id, status: draft.status })
 }
+
+const canDeleteTask = (task: TaskItem) => props.canDeleteTask?.(task) ?? true
 </script>
 
 <style scoped>

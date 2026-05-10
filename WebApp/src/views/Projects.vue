@@ -4,12 +4,14 @@
       <div>
         <p class="eyebrow">Projects</p>
         <h1>Project directory</h1>
-        <p class="subtitle">Create projects and open their delivery workspace.</p>
+        <p class="subtitle">
+          {{ ability.can('create', 'Project') ? 'Create projects and open their delivery workspace.' : 'View organization projects and open their delivery workspace.' }}
+        </p>
       </div>
     </div>
 
     <div class="projects-layout">
-      <aside class="form-card">
+      <aside v-if="ability.can('create', 'Project')" class="form-card">
         <h2>Create project</h2>
         <label>
           Name
@@ -48,7 +50,7 @@
               <router-link :to="`/projects/${project.projectId}`" class="button secondary">
                 Open
               </router-link>
-              <button class="button ghost" @click="deleteProject(project.projectId)">Delete</button>
+              <button v-if="ability.can('delete', 'Project')" class="button ghost" @click="deleteProject(project.projectId)">Delete</button>
             </div>
           </article>
         </div>
@@ -60,10 +62,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useProjects, useCreateProject, useDeleteProject } from '../composables/useProjects'
+import { useAppAbility } from '../permissions/ability'
 
 const { data: projects, isLoading } = useProjects()
 const createMutation = useCreateProject()
 const deleteMutation = useDeleteProject()
+const ability = useAppAbility()
 
 const name = ref('')
 const description = ref('')
@@ -85,9 +89,13 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 <style scoped>
 .projects-layout {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+}
+
+.projects-layout:has(.form-card) {
+  grid-template-columns: 340px minmax(0, 1fr);
 }
 
 .form-card h2,

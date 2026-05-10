@@ -27,5 +27,20 @@ namespace TaskManagement.Api.Services.Implementations
                 })
                 .ToListAsync();
         }
+
+        public async Task<UserResponse> UpdateUserRole(string role, Guid userId)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(user => user.UserId == userId);
+
+            user.Role = role;
+            await _db.SaveChangesAsync();
+            return new UserResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role
+            };
+        }
     }
 }

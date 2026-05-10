@@ -92,7 +92,9 @@
               <button class="button secondary" :disabled="!isFeatureDirty(feature)" @click="saveFeatureChanges(feature)">
                 Save
               </button>
-              <button class="button ghost" @click="deleteFeature(feature.id)">Delete</button>
+              <button v-if="ability.can('delete', asSubject('Feature', feature))" class="button ghost" @click="deleteFeature(feature.id)">
+                Delete
+              </button>
             </div>
           </article>
         </div>
@@ -113,6 +115,7 @@ import {
   useUpdateFeatureStatus,
 } from '../composables/useFeatures'
 import { useUsers } from '../composables/useUsers'
+import { asSubject, useAppAbility } from '../permissions/ability'
 
 const route = useRoute()
 const projectId = String(route.params.projectId || '')
@@ -123,6 +126,7 @@ const createFeatureMutation = useCreateFeature()
 const deleteFeatureMutation = useDeleteFeature()
 const assignFeatureMutation = useAssignFeature()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
+const ability = useAppAbility()
 
 const name = ref('')
 const description = ref('')

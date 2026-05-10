@@ -13,6 +13,7 @@ import {
 } from '../services/authApi'
 import { setAccessToken, setUser } from '../services/tokenStore'
 import { setRefreshTokenCookie } from '../services/cookieHelper'
+import { updateAbilityFor } from '../permissions/ability'
 
 const user = ref<Omit<AuthResponse, 'accessToken' | 'refreshToken'> | null>(getStoredUser())
 const isLoading = ref(false)
@@ -34,6 +35,7 @@ export const useAuth = () => {
       setRefreshTokenCookie(refreshToken)
 
       user.value = userData
+      updateAbilityFor(userData)
 
       // Redirect to login
       router.push('/login')
@@ -50,10 +52,11 @@ export const useAuth = () => {
     error.value = null
     try {
       const response = await loginUser(data)
-      const { ...userData } = response.data
+      const { id, username, email, role } = response.data
 
       // Tokens are already stored by loginUser function
-      user.value = userData
+      user.value = { id, username, email, role }
+      updateAbilityFor(user.value)
 
       // Redirect to home/dashboard
       router.push('/')
@@ -69,6 +72,7 @@ export const useAuth = () => {
     logoutUser()
     user.value = null
     error.value = null
+    updateAbilityFor(null)
     router.push('/login')
   }
 

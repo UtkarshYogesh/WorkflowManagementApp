@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Api.DTOs.User;
+using TaskManagement.Api.Models;
 using TaskManagement.Api.Services.Interfaces;
 
 namespace TaskManagement.Api.Controllers.UserController
@@ -21,6 +23,13 @@ namespace TaskManagement.Api.Controllers.UserController
         {
             var users = await userService.GetAllUsers();
             return Ok(users);
+        }
+
+        [HttpPatch("{userId}")]
+        public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] string role)
+        {
+            var user = await userService.UpdateUserRole(role, userId);
+            return Ok(user);
         }
     }
 }

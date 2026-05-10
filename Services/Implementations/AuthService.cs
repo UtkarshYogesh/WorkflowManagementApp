@@ -92,6 +92,7 @@ namespace TaskManagement.Api.Services.Implementations
                 Id = user.UserId.ToString(),
                 Username = user.Username,
                 Email = user.Email,
+                Role = user.Role,
                 AccessToken = accessToken,
                 RefreshToken = refreshToken
             };

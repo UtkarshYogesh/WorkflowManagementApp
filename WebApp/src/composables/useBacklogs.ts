@@ -51,6 +51,7 @@ export function useCreateBacklog() {
   return useMutation({
     mutationFn: (variables: CreateBacklogPayload) => createBacklog(variables.featureId, variables.data),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["backlogs"] });
       queryClient.invalidateQueries({ queryKey: ["backlogs", variables.featureId] });
     },
   });

@@ -5,5 +5,7 @@ namespace TaskManagement.Api.Services.Interfaces
     public interface IUserInterface
     {
         Task<List<UserResponse>> GetAllUsers();
+
+        Task<UserResponse> UpdateUserRole(string role, Guid userId);
     }
 }

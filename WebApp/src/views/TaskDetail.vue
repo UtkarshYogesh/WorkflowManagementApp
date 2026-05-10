@@ -40,6 +40,7 @@
             </select>
           </label>
           <button class="button primary" :disabled="!isTaskDirty" @click="saveTaskChanges">Save</button>
+          <button v-if="task && ability.can('delete', asSubject('Task', task))" class="button ghost" @click="deleteTask">Delete</button>
         </div>
       </aside>
     </div>
@@ -48,17 +49,21 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAssignTask, useTask, useUpdateTaskStatus } from '../composables/useTasks'
+import { useRoute, useRouter } from 'vue-router'
+import { useAssignTask, useDeleteTask, useTask, useUpdateTaskStatus } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
+import { asSubject, useAppAbility } from '../permissions/ability'
 
 const route = useRoute()
+const router = useRouter()
 const taskId = String(route.params.taskId || '')
 
 const { data: task } = useTask(taskId)
 const { data: users } = useUsers()
 const assignTaskMutation = useAssignTask()
 const updateTaskStatusMutation = useUpdateTaskStatus()
+const deleteTaskMutation = useDeleteTask()
+const ability = useAppAbility()
 const taskStatuses = ['Todo', 'In Progress', 'Done']
 const taskDraft = reactive({
   status: 'Todo',
@@ -91,6 +96,11 @@ const saveTaskChanges = async () => {
   if (taskDraft.assignedToUserId && taskDraft.assignedToUserId !== (task.value.assignedToUserId || '')) {
     await assignTaskMutation.mutateAsync({ taskId, userId: taskDraft.assignedToUserId })
   }
+}
+
+const deleteTask = async () => {
+  await deleteTaskMutation.mutateAsync(taskId)
+  router.push('/backlogs')
 }
 
 const formatDate = (value: string) => new Date(value).toLocaleString()

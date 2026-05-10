@@ -107,6 +107,9 @@
           <button class="button secondary" :disabled="!isTaskDirty(task)" @click.stop="saveTaskChanges(task)">
             Save
           </button>
+          <button v-if="ability.can('delete', asSubject('Task', task))" class="button ghost" @click.stop="deleteTask(task.id)">
+            Delete
+          </button>
         </article>
       </div>
     </section>
@@ -117,8 +120,9 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBacklog, useAssignBacklog, useUpdateBacklogStatus } from '../composables/useBacklogs'
-import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus } from '../composables/useTasks'
+import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus, useDeleteTask } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
+import { asSubject, useAppAbility } from '../permissions/ability'
 
 const route = useRoute()
 const router = useRouter()
@@ -132,6 +136,8 @@ const assignBacklogMutation = useAssignBacklog()
 const assignTaskMutation = useAssignTask()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
 const updateTaskStatusMutation = useUpdateTaskStatus()
+const deleteTaskMutation = useDeleteTask()
+const ability = useAppAbility()
 
 const title = ref('')
 const description = ref('')
@@ -238,6 +244,10 @@ const saveTaskChanges = async (task: any) => {
   }
 }
 
+const deleteTask = async (taskId: string) => {
+  await deleteTaskMutation.mutateAsync(taskId)
+}
+
 const formatDate = (value: string) => new Date(value).toLocaleDateString()
 </script>
 
@@ -310,7 +320,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .work-table-header,
 .work-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 200px 90px;
+  grid-template-columns: minmax(0, 1fr) 140px 200px 90px 90px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;

@@ -18,6 +18,7 @@ export interface AuthResponse {
   id: string
   username: string
   email: string
+  role?: string
   accessToken: string
   refreshToken: string
 }
@@ -37,7 +38,8 @@ export const loginUser = async (data: LoginRequest) => {
     setUser({
       id: response.data.id,
       username: response.data.username,
-      email: response.data.email
+      email: response.data.email,
+      role: response.data.role,
     })
     setRefreshTokenCookie(response.data.refreshToken)
   }
@@ -82,7 +84,8 @@ export const refreshToken = async () => {
       setUser({
         id: response.data.id,
         username: response.data.username,
-        email: response.data.email
+        email: response.data.email,
+        role: response.data.role,
       })
       setRefreshTokenCookie(response.data.refreshToken)
       return response.data

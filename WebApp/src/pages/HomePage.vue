@@ -8,7 +8,7 @@
           <h1>Plan, track, and ship work</h1>
         </div>
         <div class="topbar-actions">
-          <router-link class="button primary" to="/projects">Create project</router-link>
+          <router-link v-if="ability.can('create', 'Project')" class="button primary" to="/projects">Create project</router-link>
         </div>
       </header>
       <main class="app-main">
@@ -20,6 +20,9 @@
 
 <script setup lang="ts">
 import Sidebar from '@/components/layout/SideBar.vue'
+import { useAppAbility } from '@/permissions/ability'
+
+const ability = useAppAbility()
 </script>
 
 <style>

@@ -113,6 +113,9 @@
           <button class="button secondary" :disabled="!isBacklogDirty(backlog)" @click.stop="saveBacklogChanges(backlog)">
             Save
           </button>
+          <button v-if="ability.can('delete', asSubject('Backlog', backlog))" class="button ghost" @click.stop="deleteBacklog(backlog.id)">
+            Delete
+          </button>
         </article>
       </div>
     </section>
@@ -128,8 +131,10 @@ import {
   useCreateBacklog,
   useAssignBacklog,
   useUpdateBacklogStatus,
+  useDeleteBacklog,
 } from '../composables/useBacklogs'
 import { useUsers } from '../composables/useUsers'
+import { asSubject, useAppAbility } from '../permissions/ability'
 
 const route = useRoute()
 const router = useRouter()
@@ -143,6 +148,8 @@ const assignFeatureMutation = useAssignFeature()
 const assignBacklogMutation = useAssignBacklog()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
+const deleteBacklogMutation = useDeleteBacklog()
+const ability = useAppAbility()
 
 const title = ref('')
 const description = ref('')
@@ -237,6 +244,10 @@ const saveBacklogChanges = async (backlog: any) => {
   if (draft.assignedToUserId && draft.assignedToUserId !== (backlog.assignedToUserId || '')) {
     await assignBacklogMutation.mutateAsync({ backlogId: backlog.id, userId: draft.assignedToUserId })
   }
+}
+
+const deleteBacklog = async (backlogId: string) => {
+  await deleteBacklogMutation.mutateAsync(backlogId)
 }
 
 const getBacklogDraft = (backlog: any): WorkDraft => {
@@ -362,7 +373,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .work-table-header,
 .work-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 200px 90px;
+  grid-template-columns: minmax(0, 1fr) 140px 200px 90px 90px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;

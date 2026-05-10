@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { restoreSession } from '../services/authApi'
+import { getStoredUser, restoreSession } from '../services/authApi'
+import { ability, updateAbilityFor, type AppAction, type AppSubject } from '../permissions/ability'
 
 // View Imports
 import Dashboard from '../views/Dashboard.vue'
@@ -18,22 +19,22 @@ import HomePage from '@/pages/HomePage.vue'
 const publicRoutes = ['/login', '/register']
 
 const routes: RouteRecordRaw[] = [
-  { path: '/login', component: Login, meta: { isPublic: true } },
-  { path: '/register', component: Register, meta: { isPublic: true } },
+      { path: '/login', component: Login, meta: { isPublic: true } },
+      { path: '/register', component: Register, meta: { isPublic: true } },
   {
     path: '/',
     component: HomePage,
     children: [
       { path: '/', component: Dashboard },
-      { path: '/projects', component: Projects },
-      { path: '/projects/:projectId', component: ProjectDetail },
-      { path: '/projects/:projectId/features/:featureId', component: FeatureDetail },
-      { path: '/features', component: Features },
-      { path: '/features/:featureId', component: FeatureDetail },
-      { path: '/backlogs', component: Backlogs },
-      { path: '/backlogs/:backlogId', component: BacklogDetail },
-      { path: '/tasks', component: Tasks },
-      { path: '/tasks/:taskId', component: TaskDetail },
+      { path: '/projects', component: Projects, meta: { permission: { action: 'read', subject: 'Project' } } },
+      { path: '/projects/:projectId', component: ProjectDetail, meta: { permission: { action: 'read', subject: 'Project' } } },
+      { path: '/projects/:projectId/features/:featureId', component: FeatureDetail, meta: { permission: { action: 'read', subject: 'Feature' } } },
+      { path: '/features', component: Features, meta: { permission: { action: 'read', subject: 'Feature' } } },
+      { path: '/features/:featureId', component: FeatureDetail, meta: { permission: { action: 'read', subject: 'Feature' } } },
+      { path: '/backlogs', component: Backlogs, meta: { permission: { action: 'read', subject: 'Backlog' } } },
+      { path: '/backlogs/:backlogId', component: BacklogDetail, meta: { permission: { action: 'read', subject: 'Backlog' } } },
+      { path: '/tasks', component: Tasks, meta: { permission: { action: 'read', subject: 'Task' } } },
+      { path: '/tasks/:taskId', component: TaskDetail, meta: { permission: { action: 'read', subject: 'Task' } } },
     ]
   },
   
@@ -47,13 +48,17 @@ const router = createRouter({
 // Route guard for authentication
 router.beforeEach(async (to, from, next) => {
   const isUserAuthenticated = await restoreSession()
+  updateAbilityFor(getStoredUser())
   const isPublicRoute = to.meta.isPublic === true
+  const permission = to.meta.permission as { action: AppAction; subject: AppSubject } | undefined
 
   if (!isUserAuthenticated && !isPublicRoute) {
     // Not authenticated and trying to access protected route
     next('/login')
   } else if (isUserAuthenticated && isPublicRoute) {
     // Already authenticated and trying to access public route
+    next('/')
+  } else if (permission && !ability.can(permission.action, permission.subject)) {
     next('/')
   } else {
     // Allow navigation

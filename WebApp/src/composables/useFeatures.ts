@@ -51,6 +51,7 @@ export function useCreateFeature() {
   return useMutation({
     mutationFn: (variables: CreateFeaturePayload) => createFeature(variables.projectId, variables.data),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["features"] });
       queryClient.invalidateQueries({ queryKey: ["features", variables.projectId] });
     },
   });
