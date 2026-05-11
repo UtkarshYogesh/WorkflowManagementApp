@@ -54,6 +54,8 @@ builder.Services.AddScoped<ITaskInterface, TaskService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserInterface, UserService>();
 builder.Services.AddScoped<JwtHelper>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddControllers();
 
 

@@ -12,7 +12,7 @@ namespace TaskManagement.Api.Services.Interfaces
 
         Task<BacklogResponse> UpdateBacklog(Guid backlogId, BacklogRequest backlogRequest);
 
-        Task DeleteBacklog(Guid backlogId);
+        Task<bool> DeleteBacklog(Guid backlogId);
 
         Task<BacklogResponse> UpdateBacklogStatus(Guid backlogId, string status);
 

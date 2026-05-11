@@ -25,6 +25,7 @@ namespace TaskManagement.Api.Controllers.UserController
             return Ok(users);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{userId}")]
         public async Task<IActionResult> ChangeUserRole(Guid userId, [FromBody] string role)
         {

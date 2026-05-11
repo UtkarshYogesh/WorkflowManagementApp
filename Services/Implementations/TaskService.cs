@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Task;
 using TaskManagement.Api.Models;
@@ -6,63 +6,39 @@ using TaskManagement.Api.Services.Interfaces;
 
 namespace TaskManagement.Api.Services.Implementations
 {
-    public class TaskService: ITaskInterface
+    public class TaskService : ITaskInterface
     {
         public readonly AppDbContext _db;
+        private readonly ICurrentUserService currentUser;
 
-        public TaskService(AppDbContext appDbContext) { _db = appDbContext; }
+        public TaskService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        {
+            _db = appDbContext;
+            this.currentUser = currentUser;
+        }
 
         public async Task<List<TaskResponse>> GetAllTasks()
         {
-            var tasks = await _db.Tasks
-                .Select(t => new TaskResponse
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    Status = t.Status,
-                    CreatedAt = t.CreatedAt,
-                    BacklogItemId = t.BacklogItemId,
-                    AssignedToUserId = t.AssignedToUserId
-                })
+            return await _db.Tasks
+                .Where(t => !t.IsDeleted && !t.BacklogItem.IsDeleted && !t.BacklogItem.Feature.IsDeleted)
+                .Select(t => ToResponse(t))
                 .ToListAsync();
-
-            return tasks;
         }
 
         public async Task<List<TaskResponse>> GetAllTasksForBacklog(Guid backlogId)
         {
-            var tasks = await _db.Tasks.Where(t => t.BacklogItemId == backlogId)
-                .Select(t => new TaskResponse
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    Status = t.Status,
-                    CreatedAt = t.CreatedAt,
-                    BacklogItemId = t.BacklogItemId,
-                    AssignedToUserId = t.AssignedToUserId
-                })
+            return await _db.Tasks
+                .Where(t => t.BacklogItemId == backlogId && !t.IsDeleted && !t.BacklogItem.IsDeleted)
+                .Select(t => ToResponse(t))
                 .ToListAsync();
-
-            return tasks;
-
         }
 
         public async Task<TaskResponse> GetTaskById(Guid taskId)
         {
-            var task = await _db.Tasks.Where(t => t.Id == taskId).FirstOrDefaultAsync();
-            if (task == null) return null;
-            return new TaskResponse
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                CreatedAt = task.CreatedAt,
-                BacklogItemId = task.BacklogItemId,
-                AssignedToUserId = task.AssignedToUserId
-            };
+            var task = await _db.Tasks
+                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted && !t.BacklogItem.IsDeleted);
+
+            return task == null ? null : ToResponse(task);
         }
 
         public async Task<TaskResponse> AddTaskToBacklog(Guid backlogId, TaskRequest taskRequest)
@@ -74,78 +50,80 @@ namespace TaskManagement.Api.Services.Implementations
                 Description = taskRequest.Description,
                 Status = "Todo",
                 CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = currentUser.UserId,
                 BacklogItemId = backlogId,
                 AssignedToUserId = taskRequest.AssignedToUserId
             };
+
             _db.Tasks.Add(task);
             await _db.SaveChangesAsync();
-            return new TaskResponse
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                CreatedAt = task.CreatedAt,
-                BacklogItemId = task.BacklogItemId,
-                AssignedToUserId = task.AssignedToUserId
-            };
+
+            return ToResponse(task);
         }
 
         public async Task<TaskResponse> UpdateTaskStatus(Guid taskId, string newStatus)
         {
-            var task = await _db.Tasks.Where(t => t.Id == taskId).FirstOrDefaultAsync();
+            var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
             if (task == null) return null;
+
             task.Status = newStatus;
+            SetUpdated(task);
             await _db.SaveChangesAsync();
-            return new TaskResponse
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                CreatedAt = task.CreatedAt,
-                BacklogItemId = task.BacklogItemId,
-                AssignedToUserId = task.AssignedToUserId
-            };
+
+            return ToResponse(task);
         }
 
-        public async Task DeleteTask(Guid taskId)
+        public async Task<bool> DeleteTask(Guid taskId)
         {
-            var task = _db.Tasks.Where(t => t.Id == taskId).FirstOrDefault();
-            if (task != null)
-            {
-                _db.Tasks.Remove(task);
-                _db.SaveChanges();
-            }
+            var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+            if (task == null || !CanDelete(task)) return false;
 
+            task.IsDeleted = true;
+            task.DeletedByUserId = currentUser.UserId;
+            task.DeletedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return true;
         }
 
         public async Task<TaskResponse> AssignTaskToUser(Guid taskId, Guid userId)
         {
-            var task = await _db.Tasks.Where(t => t.Id == taskId).FirstOrDefaultAsync();
+            var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
             if (task == null) return null;
+
             task.AssignedToUserId = userId;
+            SetUpdated(task);
             await _db.SaveChangesAsync();
-            return new TaskResponse
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                CreatedAt = task.CreatedAt,
-                BacklogItemId = task.BacklogItemId,
-                AssignedToUserId = task.AssignedToUserId
-            };
+
+            return ToResponse(task);
         }
 
         public async Task<TaskResponse> UpdateTask(Guid guid, TaskRequest taskRequest)
         {
-            var task = await _db.Tasks.Where(t => t.Id == guid).FirstOrDefaultAsync();
+            var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == guid && !t.IsDeleted);
             if (task == null) return null;
+
             task.Title = taskRequest.Title;
             task.Description = taskRequest.Description;
+            SetUpdated(task);
             await _db.SaveChangesAsync();
 
+            return ToResponse(task);
+        }
+
+        private bool CanDelete(TaskItem task)
+        {
+            return currentUser.IsAdmin || task.CreatedByUserId == currentUser.UserId;
+        }
+
+        private void SetUpdated(TaskItem task)
+        {
+            task.UpdatedByUserId = currentUser.UserId;
+            task.UpdatedAt = DateTime.UtcNow;
+        }
+
+        private static TaskResponse ToResponse(TaskItem task)
+        {
             return new TaskResponse
             {
                 Id = task.Id,
@@ -153,6 +131,7 @@ namespace TaskManagement.Api.Services.Implementations
                 Description = task.Description,
                 Status = task.Status,
                 CreatedAt = task.CreatedAt,
+                CreatedByUserId = task.CreatedByUserId,
                 BacklogItemId = task.BacklogItemId,
                 AssignedToUserId = task.AssignedToUserId
             };

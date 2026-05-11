@@ -10,7 +10,7 @@ namespace TaskManagement.Api.Services.Interfaces
         Task<TaskResponse> AddTaskToBacklog(Guid backlogId, TaskRequest taskRequest);
         Task<TaskResponse> UpdateTaskStatus(Guid taskId, string newStatus);
 
-        Task DeleteTask(Guid taskId);
+        Task<bool> DeleteTask(Guid taskId);
 
         Task<TaskResponse> AssignTaskToUser(Guid taskId, Guid userId);
         Task<TaskResponse> UpdateTask(Guid guid, TaskRequest taskRequest);

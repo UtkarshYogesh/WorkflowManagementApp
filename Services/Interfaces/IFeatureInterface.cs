@@ -12,7 +12,7 @@ namespace TaskManagement.Api.Services.Interfaces
 
         Task<FeatureResponse> UpdatedFeatureStatus(Guid featureId, string newStatus);
         Task<FeatureResponse> AddUserToFeature(Guid featureId, Guid userId);
-        Task DeleteFeature(Guid featureId);
+        Task<bool> DeleteFeature(Guid featureId);
         Task<FeatureResponse> UpdateFeature(Guid featureId, FeatureRequest featureRequest);
 
     }

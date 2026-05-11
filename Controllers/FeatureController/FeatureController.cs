@@ -110,7 +110,8 @@ namespace TaskManagement.Api.Controllers
         [HttpDelete("features/{featureId}")]
         public async Task<IActionResult> DeleteFeature(Guid featureId)
         {
-           await featureInterface.DeleteFeature(featureId);
+            var deleted = await featureInterface.DeleteFeature(featureId);
+            if (!deleted) return Forbid();
             return NoContent();
         }
     }

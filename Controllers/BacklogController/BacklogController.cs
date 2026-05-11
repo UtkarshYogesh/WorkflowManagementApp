@@ -110,7 +110,8 @@ namespace TaskManagement.Api.Controllers
         [HttpDelete("backlog-items/{backlogId}")]
         public async Task<IActionResult> DeleteBacklog(Guid backlogId)
         {
-            await backlogInterface.DeleteBacklog(backlogId);
+            var deleted = await backlogInterface.DeleteBacklog(backlogId);
+            if (!deleted) return Forbid();
             return NoContent();
         }
     }

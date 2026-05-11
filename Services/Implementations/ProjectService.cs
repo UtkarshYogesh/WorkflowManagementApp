@@ -1,4 +1,3 @@
-﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Project;
@@ -10,20 +9,19 @@ namespace TaskManagement.Api.Services.Implementations
     public class ProjectService : IProjectInterface
     {
         public readonly AppDbContext _db;
-        public ProjectService(AppDbContext appDbContext)
+        private readonly ICurrentUserService currentUser;
+
+        public ProjectService(AppDbContext appDbContext, ICurrentUserService currentUser)
         {
             _db = appDbContext;
+            this.currentUser = currentUser;
         }
+
         public async Task<List<ProjectResponse>> GetAllProjectsAsync()
         {
             return await _db.Projects
-                .Select(p => new ProjectResponse
-                {
-                    ProjectId = p.ProjectId,
-                    Name = p.Name,
-                    Description = p.Description,
-                    CreatedAt = p.CreatedAt
-                })
+                .Where(p => !p.IsDeleted)
+                .Select(p => ToResponse(p))
                 .ToListAsync();
         }
 
@@ -34,45 +32,50 @@ namespace TaskManagement.Api.Services.Implementations
                 ProjectId = Guid.NewGuid(),
                 Name = request.Name,
                 Description = request.Description,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = currentUser.UserId
             };
+
             _db.Projects.Add(project);
             await _db.SaveChangesAsync();
 
-            return new ProjectResponse
-            {
-                ProjectId = project.ProjectId,
-                Name = project.Name,
-                Description = project.Description,
-                CreatedAt = project.CreatedAt
-            };
+            return ToResponse(project);
         }
 
         public async Task<ProjectResponse> GetProjectById(Guid projectId)
         {
             var project = await _db.Projects
-                .Include(p => p.Features) // Include related features if needed
-                .FirstOrDefaultAsync(p => p.ProjectId == projectId);
-            if (project == null) return null;
+                .Include(p => p.Features)
+                .FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
+
+            return project == null ? null : ToResponse(project);
+        }
+
+        public async Task<bool> DeleteProjectAsync(Guid projectId)
+        {
+            if (!currentUser.IsAdmin) return false;
+
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
+            if (project == null) return false;
+
+            project.IsDeleted = true;
+            project.DeletedByUserId = currentUser.UserId;
+            project.DeletedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        private static ProjectResponse ToResponse(Project project)
+        {
             return new ProjectResponse
             {
                 ProjectId = project.ProjectId,
                 Name = project.Name,
                 Description = project.Description,
-                CreatedAt = project.CreatedAt
+                CreatedAt = project.CreatedAt,
+                CreatedByUserId = project.CreatedByUserId
             };
         }
-
-        public async Task DeleteProjectAsync(Guid projectId)
-        {
-            var project = await _db.Projects.FindAsync(projectId);
-            if (project != null)
-            {
-                _db.Projects.Remove(project);
-                await _db.SaveChangesAsync();
-            }
-        }
-
-
     }
 }

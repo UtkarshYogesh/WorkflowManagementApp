@@ -110,7 +110,8 @@ namespace TaskManagement.Api.Controllers
         [HttpDelete("tasks/{taskId}")]
         public async Task<IActionResult> DeleteTask(Guid taskId)
         {
-             await taskInterface.DeleteTask(taskId);
+            var deleted = await taskInterface.DeleteTask(taskId);
+            if (!deleted) return Forbid();
             return NoContent();
         }
     }

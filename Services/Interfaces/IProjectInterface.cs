@@ -10,7 +10,7 @@ namespace TaskManagement.Api.Services.Interfaces
 
         Task<ProjectResponse> GetProjectById(Guid projectId);
 
-        Task DeleteProjectAsync(Guid projectId);
+        Task<bool> DeleteProjectAsync(Guid projectId);
 
     }
 }

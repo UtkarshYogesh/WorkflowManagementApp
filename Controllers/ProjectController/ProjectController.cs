@@ -24,8 +24,8 @@ namespace TaskManagement.Api.Controllers.ProjectController
             return Ok(projects);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-
         public async Task<IActionResult> AddProject(ProjectRequest projectRequest)
         {
 
@@ -41,10 +41,12 @@ namespace TaskManagement.Api.Controllers.ProjectController
             return Ok(project);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{projectId}")]
         public async Task<IActionResult> DeleteProjectById(Guid projectId )
         {
-            await projectService.DeleteProjectAsync(projectId);
+            var deleted = await projectService.DeleteProjectAsync(projectId);
+            if (!deleted) return Forbid();
             return NoContent();
         }
 
