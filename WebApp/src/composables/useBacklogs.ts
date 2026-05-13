@@ -4,6 +4,7 @@ import {
   fetchAllBacklogs,
   fetchBacklogById,
   createBacklog,
+  updateBacklog,
   deleteBacklog,
   updateBacklogStatus,
   assignBacklogToUser,
@@ -33,7 +34,24 @@ export function useBacklog(backlogId: string) {
 
 type CreateBacklogPayload = {
   featureId: string;
-  data: { title: string; description: string; assignedToUserId?: string | null };
+  data: {
+    title: string;
+    description: string;
+    priority?: string;
+    type?: string;
+    assignedToUserId?: string | null;
+  };
+};
+
+type UpdateBacklogPayload = {
+  backlogId: string;
+  data: {
+    title: string;
+    description: string;
+    priority: string;
+    type: string;
+    assignedToUserId?: string | null;
+  };
 };
 
 type UpdateBacklogStatusPayload = {
@@ -44,6 +62,19 @@ type UpdateBacklogStatusPayload = {
 type AssignBacklogPayload = {
   backlogId: string;
   userId: string;
+};
+
+const updateBacklogCache = (queryClient: ReturnType<typeof useQueryClient>, updatedBacklog: any) => {
+  if (!updatedBacklog?.id) return;
+
+  queryClient.setQueryData(["backlog", updatedBacklog.id], updatedBacklog);
+  queryClient.setQueriesData({ queryKey: ["backlogs"] }, (oldData: any) => {
+    if (!Array.isArray(oldData)) return oldData;
+
+    return oldData.map((backlog: any) =>
+      backlog.id === updatedBacklog.id ? { ...backlog, ...updatedBacklog } : backlog
+    );
+  });
 };
 
 export function useCreateBacklog() {
@@ -67,13 +98,30 @@ export function useDeleteBacklog() {
   });
 }
 
+export function useUpdateBacklog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: UpdateBacklogPayload) => updateBacklog(variables.backlogId, variables.data),
+    onSuccess: (response, variables) => {
+      updateBacklogCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["backlogs"] }),
+        queryClient.invalidateQueries({ queryKey: ["backlog", variables.backlogId] }),
+      ]);
+    },
+  });
+}
+
 export function useUpdateBacklogStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: UpdateBacklogStatusPayload) => updateBacklogStatus(variables.backlogId, variables.status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["backlogs"] });
-      queryClient.invalidateQueries({ queryKey: ["backlog"] });
+    onSuccess: (response, variables) => {
+      updateBacklogCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["backlogs"] }),
+        queryClient.invalidateQueries({ queryKey: ["backlog", variables.backlogId] }),
+      ]);
     },
   });
 }
@@ -83,9 +131,12 @@ export function useAssignBacklog() {
   return useMutation({
     mutationFn: (variables: AssignBacklogPayload) =>
       assignBacklogToUser(variables.backlogId, variables.userId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["backlogs"] });
-      queryClient.invalidateQueries({ queryKey: ["backlog", variables.backlogId] });
+    onSuccess: (response, variables) => {
+      updateBacklogCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["backlogs"] }),
+        queryClient.invalidateQueries({ queryKey: ["backlog", variables.backlogId] }),
+      ]);
     },
   });
 }

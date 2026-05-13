@@ -6,6 +6,8 @@
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = "New";
+        public string Priority { get; set; } = "P3";
+        public string Type { get; set; } = "Story";
 
         public Guid FeatureId { get; set; }           // FK — now Guid
         public Feature Feature { get; set; } = null!;

@@ -57,6 +57,22 @@
             </option>
           </select>
         </label>
+        <label>
+          Priority
+          <select v-model="priority">
+            <option v-for="option in backlogPriorities" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Type
+          <select v-model="type">
+            <option v-for="option in backlogTypes" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
         <div class="form-actions">
           <button class="button primary" :disabled="!selectedFeatureId || !title" @click="submitBacklog">
             Create backlog
@@ -83,6 +99,10 @@
                   <p>{{ backlog.description || 'No description' }}</p>
                 </div>
               </div>
+              <span class="priority-pill" :class="`priority-${getBacklogPriority(backlog).toLowerCase()}`">
+                {{ getBacklogPriority(backlog) }}
+              </span>
+              <span class="type-pill">{{ getBacklogType(backlog) }}</span>
               <span class="status-pill">{{ backlog.status }}</span>
               <span class="muted">{{ getTasksForBacklog(backlog.id).length }} tasks</span>
               <button v-if="ability.can('delete', asSubject('Backlog', backlog))" class="button ghost delete-button" @click="deleteBacklog(backlog.id)">
@@ -159,6 +179,10 @@ const showCreateForm = ref(false)
 const title = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+const priority = ref('P3')
+const type = ref('Story')
+const backlogPriorities = ['P1', 'P2', 'P3']
+const backlogTypes = ['Story', 'Bug', 'Improvement', 'Technical']
 
 watch(
   projects,
@@ -212,6 +236,9 @@ const getTasksForBacklog = (backlogId: string) => {
   return filteredTasks.value.filter((task: any) => task.backlogItemId === backlogId)
 }
 
+const getBacklogPriority = (backlog: any) => backlog.priority || 'P3'
+const getBacklogType = (backlog: any) => backlog.type || 'Story'
+
 const canDeleteTask = (task: any) => ability.can('delete', asSubject('Task', task))
 
 const submitBacklog = async () => {
@@ -221,12 +248,16 @@ const submitBacklog = async () => {
     data: {
       title: title.value,
       description: description.value,
+      priority: priority.value,
+      type: type.value,
       assignedToUserId: assignedToUserId.value || null,
     },
   })
   title.value = ''
   description.value = ''
   assignedToUserId.value = ''
+  priority.value = 'P3'
+  type.value = 'Story'
   showCreateForm.value = false
 }
 
@@ -312,13 +343,46 @@ const deleteTask = async (taskId: string) => {
 
 .backlog-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content 110px max-content;
+  grid-template-columns: minmax(0, 1fr) 58px 110px max-content 110px max-content;
   gap: 14px;
   align-items: center;
   padding: 14px;
   border: 1px solid #dfe1e6;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.priority-pill,
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.priority-p1 {
+  background: #ffebe6;
+  color: #ae2e24;
+}
+
+.priority-p2 {
+  background: #fff7d6;
+  color: #7f5f01;
+}
+
+.priority-p3 {
+  background: #e3fcef;
+  color: #216e4e;
+}
+
+.type-pill {
+  background: #f1f2f4;
+  color: #44546f;
 }
 
 .delete-button {

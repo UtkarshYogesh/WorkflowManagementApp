@@ -33,6 +33,8 @@ namespace TaskManagement.Api.Services.Implementations
                 Title = backlogRequest.Title,
                 Description = backlogRequest.Description,
                 Status = "Planned",
+                Priority = NormalizePriority(backlogRequest.Priority),
+                Type = NormalizeType(backlogRequest.Type),
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = currentUser.UserId,
                 FeatureId = featureId,
@@ -68,6 +70,8 @@ namespace TaskManagement.Api.Services.Implementations
 
             backlogItem.Title = backlogRequest.Title;
             backlogItem.Description = backlogRequest.Description;
+            backlogItem.Priority = NormalizePriority(backlogRequest.Priority);
+            backlogItem.Type = NormalizeType(backlogRequest.Type);
             backlogItem.AssignedToUserId = backlogRequest.AssignedToUserId;
             SetUpdated(backlogItem);
             await _db.SaveChangesAsync();
@@ -131,10 +135,33 @@ namespace TaskManagement.Api.Services.Implementations
                 Title = backlogItem.Title,
                 Description = backlogItem.Description,
                 Status = backlogItem.Status,
+                Priority = backlogItem.Priority,
+                Type = backlogItem.Type,
                 CreatedAt = backlogItem.CreatedAt,
                 CreatedByUserId = backlogItem.CreatedByUserId,
                 FeatureId = backlogItem.FeatureId,
                 AssignedToUserId = backlogItem.AssignedToUserId
+            };
+        }
+
+        private static string NormalizePriority(string priority)
+        {
+            return priority?.Trim().ToUpperInvariant() switch
+            {
+                "P1" => "P1",
+                "P2" => "P2",
+                _ => "P3"
+            };
+        }
+
+        private static string NormalizeType(string type)
+        {
+            return type?.Trim() switch
+            {
+                "Bug" => "Bug",
+                "Improvement" => "Improvement",
+                "Technical" => "Technical",
+                _ => "Story"
             };
         }
     }

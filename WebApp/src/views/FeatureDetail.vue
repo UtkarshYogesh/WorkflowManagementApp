@@ -81,6 +81,22 @@
             </option>
           </select>
         </label>
+        <label>
+          Priority
+          <select v-model="priority">
+            <option v-for="option in backlogPriorities" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Type
+          <select v-model="type">
+            <option v-for="option in backlogTypes" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
         <div class="form-actions">
           <button class="button primary" :disabled="!title" @click="submitBacklog">Create backlog</button>
           <button class="button ghost" @click="showCreateForm = false">Cancel</button>
@@ -100,6 +116,8 @@
       <div v-else class="work-table">
         <div class="work-table-header">
           <span>Name</span>
+          <span>Priority</span>
+          <span>Type</span>
           <span>Status</span>
           <span>Assignee</span>
           <span></span>
@@ -109,6 +127,16 @@
             <strong>{{ backlog.title }}</strong>
             <small>{{ backlog.description || 'No description' }}</small>
           </div>
+          <select v-model="getBacklogDraft(backlog).priority" @click.stop>
+            <option v-for="option in backlogPriorities" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+          <select v-model="getBacklogDraft(backlog).type" @click.stop>
+            <option v-for="option in backlogTypes" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
           <select v-model="getBacklogDraft(backlog).status" @click.stop>
             <option v-for="status in backlogStatuses" :key="status" :value="status">
               {{ status }}
@@ -142,6 +170,7 @@ import { useFeature, useAssignFeature, useUpdateFeature, useUpdateFeatureStatus 
 import {
   useBacklogs,
   useCreateBacklog,
+  useUpdateBacklog,
   useAssignBacklog,
   useUpdateBacklogStatus,
   useDeleteBacklog,
@@ -159,6 +188,7 @@ const { data: users } = useUsers()
 const createBacklogMutation = useCreateBacklog()
 const assignFeatureMutation = useAssignFeature()
 const updateFeatureMutation = useUpdateFeature()
+const updateBacklogMutation = useUpdateBacklog()
 const assignBacklogMutation = useAssignBacklog()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
@@ -168,11 +198,15 @@ const ability = useAppAbility()
 const title = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+const priority = ref('P3')
+const type = ref('Story')
 const showCreateForm = ref(false)
 const featureStatuses = ['Planned', 'Committed', 'Done']
 const featurePriorities = ['P1', 'P2', 'P3']
 const backlogStatuses = ['Planned', 'Committed', 'Done']
-type WorkDraft = { status: string; assignedToUserId: string }
+const backlogPriorities = ['P1', 'P2', 'P3']
+const backlogTypes = ['Story', 'Bug', 'Improvement', 'Technical']
+type WorkDraft = { status: string; priority: string; type: string; assignedToUserId: string }
 const featureDraft = reactive({
   status: 'Planned',
   priority: 'P3',
@@ -197,6 +231,8 @@ watch(
     ;(items || []).forEach((backlog: any) => {
       backlogDrafts[backlog.id] = {
         status: backlog.status || 'Planned',
+        priority: backlog.priority || 'P3',
+        type: backlog.type || 'Story',
         assignedToUserId: backlog.assignedToUserId || '',
       }
     })
@@ -220,12 +256,16 @@ const submitBacklog = async () => {
     data: {
       title: title.value,
       description: description.value,
+      priority: priority.value,
+      type: type.value,
       assignedToUserId: assignedToUserId.value || null,
     },
   })
   title.value = ''
   description.value = ''
   assignedToUserId.value = ''
+  priority.value = 'P3'
+  type.value = 'Story'
   showCreateForm.value = false
 }
 
@@ -261,6 +301,8 @@ const isBacklogDirty = (backlog: any) => {
   const draft = getBacklogDraft(backlog)
   return (
     draft.status !== (backlog.status || 'Planned') ||
+    draft.priority !== (backlog.priority || 'P3') ||
+    draft.type !== (backlog.type || 'Story') ||
     draft.assignedToUserId !== (backlog.assignedToUserId || '')
   )
 }
@@ -269,6 +311,21 @@ const saveBacklogChanges = async (backlog: any) => {
   const draft = getBacklogDraft(backlog)
   if (draft.status !== (backlog.status || 'Planned')) {
     await updateBacklogStatusMutation.mutateAsync({ backlogId: backlog.id, status: draft.status })
+  }
+  if (
+    draft.priority !== (backlog.priority || 'P3') ||
+    draft.type !== (backlog.type || 'Story')
+  ) {
+    await updateBacklogMutation.mutateAsync({
+      backlogId: backlog.id,
+      data: {
+        title: backlog.title,
+        description: backlog.description || '',
+        priority: draft.priority,
+        type: draft.type,
+        assignedToUserId: draft.assignedToUserId || null,
+      },
+    })
   }
   if (draft.assignedToUserId && draft.assignedToUserId !== (backlog.assignedToUserId || '')) {
     await assignBacklogMutation.mutateAsync({ backlogId: backlog.id, userId: draft.assignedToUserId })
@@ -283,6 +340,8 @@ const getBacklogDraft = (backlog: any): WorkDraft => {
   if (!backlogDrafts[backlog.id]) {
     backlogDrafts[backlog.id] = {
       status: backlog.status || 'Planned',
+      priority: backlog.priority || 'P3',
+      type: backlog.type || 'Story',
       assignedToUserId: backlog.assignedToUserId || '',
     }
   }
@@ -435,7 +494,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .work-table-header,
 .work-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 200px 90px 90px;
+  grid-template-columns: minmax(0, 1fr) 90px 130px 140px 200px 90px 90px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
@@ -444,7 +503,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 .work-table-header,
 .work-row {
-  min-width: 680px;
+  min-width: 980px;
 }
 
 .work-table-header {

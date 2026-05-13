@@ -12,6 +12,9 @@ export const fetchBacklogById = (backlogId: string) =>
 export const createBacklog = (featureId: string, data: any) =>
   api.post(`/features/${featureId}/backlog-items`, data);
 
+export const updateBacklog = (backlogId: string, data: any) =>
+  api.put(`/backlog-items/${backlogId}`, data);
+
 export const deleteBacklog = (id: string) =>
   api.delete(`/backlog-items/${id}`);
 

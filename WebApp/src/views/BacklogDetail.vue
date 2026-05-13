@@ -20,6 +20,22 @@
         <h2>Backlog details</h2>
         <div class="meta-grid">
           <label>
+            Priority
+            <select v-model="backlogDraft.priority">
+              <option v-for="option in backlogPriorities" :key="option" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </label>
+          <label>
+            Type
+            <select v-model="backlogDraft.type">
+              <option v-for="option in backlogTypes" :key="option" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </label>
+          <label>
             Status
             <select v-model="backlogDraft.status">
               <option v-for="status in backlogStatuses" :key="status" :value="status">
@@ -119,7 +135,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBacklog, useAssignBacklog, useUpdateBacklogStatus } from '../composables/useBacklogs'
+import { useBacklog, useAssignBacklog, useUpdateBacklog, useUpdateBacklogStatus } from '../composables/useBacklogs'
 import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus, useDeleteTask } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
@@ -133,6 +149,7 @@ const { data: tasks, isLoading: isTasksLoading } = useTasks(backlogId)
 const { data: users } = useUsers()
 const createTaskMutation = useCreateTask()
 const assignBacklogMutation = useAssignBacklog()
+const updateBacklogMutation = useUpdateBacklog()
 const assignTaskMutation = useAssignTask()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
 const updateTaskStatusMutation = useUpdateTaskStatus()
@@ -144,10 +161,14 @@ const description = ref('')
 const assignedToUserId = ref('')
 const showCreateForm = ref(false)
 const backlogStatuses = ['Planned', 'Committed', 'Done']
+const backlogPriorities = ['P1', 'P2', 'P3']
+const backlogTypes = ['Story', 'Bug', 'Improvement', 'Technical']
 const taskStatuses = ['Todo', 'In Progress', 'Done']
 type WorkDraft = { status: string; assignedToUserId: string }
 const backlogDraft = reactive({
   status: 'Planned',
+  priority: 'P3',
+  type: 'Story',
   assignedToUserId: '',
 })
 const taskDrafts = reactive<Record<string, WorkDraft>>({})
@@ -157,6 +178,8 @@ watch(
   (value) => {
     if (!value) return
     backlogDraft.status = value.status || 'Planned'
+    backlogDraft.priority = value.priority || 'P3'
+    backlogDraft.type = value.type || 'Story'
     backlogDraft.assignedToUserId = value.assignedToUserId || ''
   },
   { immediate: true },
@@ -179,6 +202,8 @@ const isBacklogDirty = computed(() => {
   if (!backlog.value) return false
   return (
     backlogDraft.status !== (backlog.value.status || 'Planned') ||
+    backlogDraft.priority !== (backlog.value.priority || 'P3') ||
+    backlogDraft.type !== (backlog.value.type || 'Story') ||
     backlogDraft.assignedToUserId !== (backlog.value.assignedToUserId || '')
   )
 })
@@ -207,6 +232,21 @@ const saveBacklogChanges = async () => {
   if (!backlog.value) return
   if (backlogDraft.status !== (backlog.value.status || 'Planned')) {
     await updateBacklogStatusMutation.mutateAsync({ backlogId, status: backlogDraft.status })
+  }
+  if (
+    backlogDraft.priority !== (backlog.value.priority || 'P3') ||
+    backlogDraft.type !== (backlog.value.type || 'Story')
+  ) {
+    await updateBacklogMutation.mutateAsync({
+      backlogId,
+      data: {
+        title: backlog.value.title,
+        description: backlog.value.description || '',
+        priority: backlogDraft.priority,
+        type: backlogDraft.type,
+        assignedToUserId: backlogDraft.assignedToUserId || null,
+      },
+    })
   }
   if (
     backlogDraft.assignedToUserId &&
@@ -270,7 +310,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 .meta-grid {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) 160px minmax(180px, 1fr) max-content;
+  grid-template-columns: 110px 150px minmax(160px, 1fr) 160px minmax(180px, 1fr) max-content;
   gap: 14px;
   align-items: end;
   margin-top: 14px;
