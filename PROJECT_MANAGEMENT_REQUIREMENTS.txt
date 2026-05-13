@@ -580,3 +580,159 @@ Current confirmed decisions:
 [x] Own item means CreatedByUserId equals current user id.
 [x] Soft delete is recommended.
 
+
+14. Implemented Features Snapshot
+---------------------------------
+This section records the features currently implemented in the app.
+Update this section whenever a major feature is completed.
+
+Backend/API implemented:
+
+[x] JWT-based authentication with login and register flows.
+[x] Admin/User role support.
+[x] Current user context for created, updated, deleted, and permission checks.
+[x] Project model, DTOs, service, controller, and database table.
+[x] Project status field and project status update endpoint.
+[x] Feature model, DTOs, service, controller, and database table.
+[x] Feature belongs to a project.
+[x] Feature assignment to a user.
+[x] Feature priority field.
+[x] Feature status field and feature status update endpoint.
+[x] Backlog item model, DTOs, service, controller, and database table.
+[x] Backlog item belongs to a feature.
+[x] Backlog item type field.
+[x] Backlog item priority field.
+[x] Backlog item status field and backlog status update endpoint.
+[x] Task model, DTOs, service, controller, and database table.
+[x] Task belongs to a backlog item.
+[x] Task assignment to a user.
+[x] Task status field and task status update endpoint.
+[x] Task does not have priority.
+[x] Audit fields are available through AuditableEntity.
+[x] CreatedByUserId is stored for main work items.
+[x] UpdatedByUserId/UpdatedAt are stored during status and update flows.
+[x] Soft delete fields exist for main entities.
+[x] Delete operations use soft delete.
+[x] Feature, backlog item, and task delete permissions check CreatedByUserId for normal users.
+[x] Admin can manage all protected entities.
+[x] Normal users can read projects and manage feature/backlog/task work according to ability rules.
+[x] Deleted records are filtered out of normal list queries.
+[x] Status normalization exists for project, feature, backlog item, and task statuses.
+
+Frontend implemented:
+
+[x] Vue web app with protected routing.
+[x] Login page.
+[x] Register page.
+[x] Dashboard page with total projects, features, backlog items, and tasks.
+[x] Dashboard task status summary.
+[x] Dashboard recent projects list.
+[x] Sidebar/layout shell.
+[x] Projects list page.
+[x] Project detail page.
+[x] Project status update UI for admins.
+[x] Add feature from project detail.
+[x] Feature list under project detail.
+[x] Feature priority, status, and assignee editing from project detail.
+[x] Features page with project scope selector.
+[x] Features list view.
+[x] Features board view grouped by backlog status.
+[x] Feature detail page.
+[x] Feature assignment, priority, and status editing.
+[x] Create backlog item under a feature.
+[x] Backlog priority, type, status, and assignee editing.
+[x] Backlogs page with project scope selector.
+[x] Backlogs list view.
+[x] Backlogs board view using task Kanban columns.
+[x] Backlog detail page.
+[x] Create tasks under backlog items.
+[x] Task list page.
+[x] Task detail page.
+[x] Task assignment and status editing.
+[x] Kanban board component for task status movement.
+[x] CASL-based frontend ability rules for Admin/User permissions.
+[x] Delete buttons are hidden when the current user does not have permission.
+[x] User settings route protected behind user management permission.
+
+Known implemented decisions:
+
+[x] Single tenant organization app.
+[x] No project member model.
+[x] All users can view projects.
+[x] Project -> Feature -> Backlog Item -> Task hierarchy is the main workflow.
+[x] Priority is handled at feature and backlog item level.
+[x] Tasks are execution work and use status, not priority.
+
+
+15. Next Features That Can Be Done
+----------------------------------
+Recommended next feature:
+
+1. My Work page
+
+Purpose:
+
+- Give each user one focused page showing what is assigned to them.
+- Turn assignment, status, and priority into a daily work queue.
+
+Suggested behavior:
+
+- Add route: /my-work.
+- Show assigned features, backlog items, and tasks for the logged-in user.
+- Group work by status.
+- Sort feature and backlog work by priority: P1, then P2, then P3.
+- Highlight blocked and high-priority items.
+- Let users update task status directly from the page.
+- Link each row/card back to project, feature, backlog, or task detail.
+
+Why this should be next:
+
+- The app already stores AssignedToUserId, Status, and Priority.
+- It adds immediate day-to-day value for every logged-in user.
+- It does not require a major database redesign.
+- It helps answer: "What should I work on first?"
+
+Suggested implementation checklist:
+
+[ ] Add backend endpoints or query support for current user's assigned features.
+[ ] Add backend endpoints or query support for current user's assigned backlog items.
+[ ] Add backend endpoints or query support for current user's assigned tasks.
+[ ] Add frontend composable for my assigned work.
+[ ] Add My Work route.
+[ ] Add My Work navigation item in sidebar.
+[ ] Build My Work page with sections for Features, Backlog Items, and Tasks.
+[ ] Add priority sorting for feature/backlog sections.
+[ ] Add quick task status update.
+[ ] Add empty states for users with no assigned work.
+
+Good follow-up features after My Work:
+
+2. Search and filters
+
+- Add project, feature, backlog, and task search.
+- Add filters for status, priority, type, and assignee.
+- Useful once the app has more data.
+
+3. Activity history
+
+- Track status, priority, assignee, and description changes.
+- Show who changed what and when.
+- Helps answer: "What changed recently?"
+
+4. Comments on work items
+
+- Add comments to features, backlog items, and tasks.
+- Keep discussions attached to the work item.
+- Useful for collaboration before adding heavier notification features.
+
+5. Blocked work dashboard
+
+- Show blocked projects/features/backlog items/tasks.
+- Highlight P1/P2 blocked items.
+- Useful for admin and team visibility.
+
+6. Due dates and aging
+
+- Add due dates to backlog items or tasks.
+- Show overdue and stale work.
+- Helps users understand urgency beyond priority.
