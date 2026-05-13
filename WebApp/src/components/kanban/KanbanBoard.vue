@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import { TASK_STATUSES } from '../../constants/statuses'
 
 type TaskItem = {
   id: string
@@ -67,7 +68,7 @@ type TaskDraft = { status: string }
 const taskDrafts = reactive<Record<string, TaskDraft>>({})
 
 const taskStatuses = computed(() => {
-  const baseStatuses = props.statuses ? [...props.statuses] : ['Todo', 'In Progress', 'Done']
+  const baseStatuses = props.statuses ? [...props.statuses] : [...TASK_STATUSES]
   const statuses = Array.isArray(props.tasks) ? props.tasks.map((task) => task.status) : []
   return [...baseStatuses, ...new Set(statuses.filter((status) => status && !baseStatuses.includes(status)))]
 })

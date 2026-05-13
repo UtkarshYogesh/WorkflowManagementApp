@@ -42,6 +42,15 @@ namespace TaskManagement.Api.Controllers.ProjectController
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPatch("{projectId}/status")]
+        public async Task<IActionResult> UpdateProjectStatus(Guid projectId, [FromBody] string status)
+        {
+            var project = await projectService.UpdateProjectStatusAsync(projectId, status);
+            if (project == null) return NotFound();
+            return Ok(project);
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{projectId}")]
         public async Task<IActionResult> DeleteProjectById(Guid projectId )
         {

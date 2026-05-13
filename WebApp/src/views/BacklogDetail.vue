@@ -139,6 +139,7 @@ import { useBacklog, useAssignBacklog, useUpdateBacklog, useUpdateBacklogStatus 
 import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus, useDeleteTask } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
+import { BACKLOG_STATUSES, TASK_STATUSES } from '../constants/statuses'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,13 +161,13 @@ const title = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
 const showCreateForm = ref(false)
-const backlogStatuses = ['Planned', 'Committed', 'Done']
+const backlogStatuses = BACKLOG_STATUSES
 const backlogPriorities = ['P1', 'P2', 'P3']
 const backlogTypes = ['Story', 'Bug', 'Improvement', 'Technical']
-const taskStatuses = ['Todo', 'In Progress', 'Done']
+const taskStatuses = TASK_STATUSES
 type WorkDraft = { status: string; assignedToUserId: string }
 const backlogDraft = reactive({
-  status: 'Planned',
+  status: 'New',
   priority: 'P3',
   type: 'Story',
   assignedToUserId: '',
@@ -177,7 +178,7 @@ watch(
   backlog,
   (value) => {
     if (!value) return
-    backlogDraft.status = value.status || 'Planned'
+    backlogDraft.status = value.status || 'New'
     backlogDraft.priority = value.priority || 'P3'
     backlogDraft.type = value.type || 'Story'
     backlogDraft.assignedToUserId = value.assignedToUserId || ''
@@ -201,7 +202,7 @@ watch(
 const isBacklogDirty = computed(() => {
   if (!backlog.value) return false
   return (
-    backlogDraft.status !== (backlog.value.status || 'Planned') ||
+    backlogDraft.status !== (backlog.value.status || 'New') ||
     backlogDraft.priority !== (backlog.value.priority || 'P3') ||
     backlogDraft.type !== (backlog.value.type || 'Story') ||
     backlogDraft.assignedToUserId !== (backlog.value.assignedToUserId || '')
@@ -230,7 +231,7 @@ const navigateToTask = (taskId: string) => {
 
 const saveBacklogChanges = async () => {
   if (!backlog.value) return
-  if (backlogDraft.status !== (backlog.value.status || 'Planned')) {
+  if (backlogDraft.status !== (backlog.value.status || 'New')) {
     await updateBacklogStatusMutation.mutateAsync({ backlogId, status: backlogDraft.status })
   }
   if (

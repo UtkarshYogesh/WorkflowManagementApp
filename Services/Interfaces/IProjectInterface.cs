@@ -9,6 +9,7 @@ namespace TaskManagement.Api.Services.Interfaces
         Task<ProjectResponse> AddProjectAsync(ProjectRequest request);
 
         Task<ProjectResponse> GetProjectById(Guid projectId);
+        Task<ProjectResponse> UpdateProjectStatusAsync(Guid projectId, string status);
 
         Task<bool> DeleteProjectAsync(Guid projectId);
 

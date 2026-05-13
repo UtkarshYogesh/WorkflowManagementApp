@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Backlog;
+using TaskManagement.Api.Helpers;
 using TaskManagement.Api.Models;
 using TaskManagement.Api.Services.Interfaces;
 
@@ -32,7 +33,7 @@ namespace TaskManagement.Api.Services.Implementations
                 Id = Guid.NewGuid(),
                 Title = backlogRequest.Title,
                 Description = backlogRequest.Description,
-                Status = "Planned",
+                Status = StatusHelper.NormalizeBacklogStatus(null),
                 Priority = NormalizePriority(backlogRequest.Priority),
                 Type = NormalizeType(backlogRequest.Type),
                 CreatedAt = DateTime.UtcNow,
@@ -97,7 +98,7 @@ namespace TaskManagement.Api.Services.Implementations
             var backlogItem = await _db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogId && !b.IsDeleted);
             if (backlogItem == null) return null;
 
-            backlogItem.Status = status;
+            backlogItem.Status = StatusHelper.NormalizeBacklogStatus(status);
             SetUpdated(backlogItem);
             await _db.SaveChangesAsync();
 

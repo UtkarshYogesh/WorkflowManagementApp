@@ -10,7 +10,22 @@
         <h1>{{ project?.name || 'Project details' }}</h1>
         <p class="subtitle">{{ project?.description || 'No description available.' }}</p>
       </div>
-      <router-link class="button secondary" to="/projects">Back to projects</router-link>
+      <div class="page-actions">
+        <div v-if="ability.can('manage', 'Project')" class="status-control">
+          <label>
+            Status
+            <select v-model="projectStatusDraft">
+              <option v-for="status in projectStatuses" :key="status" :value="status">
+                {{ status }}
+              </option>
+            </select>
+          </label>
+          <button class="button primary" :disabled="!isProjectStatusDirty" @click="saveProjectStatus">
+            Save
+          </button>
+        </div>
+        <router-link class="button secondary" to="/projects">Back to projects</router-link>
+      </div>
     </div>
 
     <div class="summary-grid">
@@ -21,6 +36,10 @@
       <article class="summary-card">
         <span>Created</span>
         <strong>{{ project?.createdAt ? formatDate(project.createdAt) : '-' }}</strong>
+      </article>
+      <article class="summary-card">
+        <span>Status</span>
+        <strong>{{ project?.status || 'New' }}</strong>
       </article>
       <article class="summary-card">
         <span>Assigned features</span>
@@ -120,7 +139,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useProject } from '../composables/useProjects'
+import { useProject, useUpdateProjectStatus } from '../composables/useProjects'
 import {
   useFeatures,
   useCreateFeature,
@@ -131,6 +150,7 @@ import {
 } from '../composables/useFeatures'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
+import { FEATURE_STATUSES, PROJECT_STATUSES } from '../constants/statuses'
 
 const route = useRoute()
 const projectId = String(route.params.projectId || '')
@@ -139,6 +159,7 @@ const { data: features, isLoading: isFeaturesLoading } = useFeatures(projectId)
 const { data: users } = useUsers()
 const createFeatureMutation = useCreateFeature()
 const deleteFeatureMutation = useDeleteFeature()
+const updateProjectStatusMutation = useUpdateProjectStatus()
 const updateFeatureMutation = useUpdateFeature()
 const assignFeatureMutation = useAssignFeature()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
@@ -148,10 +169,20 @@ const name = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
 const priority = ref('P3')
-const featureStatuses = ['Planned', 'Committed', 'Done']
+const projectStatusDraft = ref('New')
+const projectStatuses = PROJECT_STATUSES
+const featureStatuses = FEATURE_STATUSES
 const featurePriorities = ['P1', 'P2', 'P3']
 type WorkDraft = { status: string; priority: string; assignedToUserId: string }
 const featureDrafts = reactive<Record<string, WorkDraft>>({})
+
+watch(
+  project,
+  (value) => {
+    projectStatusDraft.value = value?.status || 'New'
+  },
+  { immediate: true },
+)
 
 watch(
   features,
@@ -170,6 +201,15 @@ watch(
 const assignedFeatureCount = computed(() => {
   return features.value?.filter((feature: any) => feature.assignedToUserId).length ?? 0
 })
+
+const isProjectStatusDirty = computed(() => {
+  return projectStatusDraft.value !== (project.value?.status || 'New')
+})
+
+const saveProjectStatus = async () => {
+  if (!projectId || !isProjectStatusDirty.value) return
+  await updateProjectStatusMutation.mutateAsync({ projectId, status: projectStatusDraft.value })
+}
 
 const submitFeature = async () => {
   if (!name.value) return
@@ -243,9 +283,24 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.status-control {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.status-control label {
+  display: grid;
+  gap: 7px;
+  min-width: 220px;
+  color: #44546f;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .summary-card {

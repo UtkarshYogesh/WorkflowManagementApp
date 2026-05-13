@@ -147,6 +147,7 @@ import { useFeatures, useCreateFeature, useDeleteFeature } from '../composables/
 import { useBacklogs } from '../composables/useBacklogs'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
+import { BACKLOG_STATUSES } from '../constants/statuses'
 
 const router = useRouter()
 const { data: projects, isLoading: isProjectsLoading } = useProjects()
@@ -190,7 +191,7 @@ const filteredBacklogs = computed(() => {
 })
 
 const backlogStatuses = computed(() => {
-  const baseStatuses = ['Planned', 'Committed', 'Done']
+  const baseStatuses = [...BACKLOG_STATUSES]
   const statuses = Array.isArray(filteredBacklogs.value)
     ? filteredBacklogs.value.map((backlog: any) => backlog.status)
     : []

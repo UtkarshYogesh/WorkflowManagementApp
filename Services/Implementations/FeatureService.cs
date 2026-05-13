@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Feature;
+using TaskManagement.Api.Helpers;
 using TaskManagement.Api.Models;
 using TaskManagement.Api.Services.Interfaces;
 
@@ -37,7 +38,7 @@ namespace TaskManagement.Api.Services.Implementations
                 ProjectId = projectId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = currentUser.UserId,
-                Status = "Planned",
+                Status = StatusHelper.NormalizeFeatureStatus(null),
             };
 
             await _db.Features.AddAsync(feature);
@@ -67,7 +68,7 @@ namespace TaskManagement.Api.Services.Implementations
             var feature = await _db.Features.FirstOrDefaultAsync(f => f.Id == featureId && !f.IsDeleted);
             if (feature == null) return null;
 
-            feature.Status = newStatus;
+            feature.Status = StatusHelper.NormalizeFeatureStatus(newStatus);
             SetUpdated(feature);
             await _db.SaveChangesAsync();
 

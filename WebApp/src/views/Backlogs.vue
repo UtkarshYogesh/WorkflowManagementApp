@@ -135,7 +135,7 @@
             v-else
             :backlogs="filteredBacklogs"
             :tasks="filteredTasks"
-            :statuses="['Todo', 'In Progress', 'Done']"
+            :statuses="TASK_STATUSES"
             :on-navigate-to-backlog="navigateToBacklog"
             :on-navigate-to-task="navigateToTask"
             :can-delete-task="canDeleteTask"
@@ -158,6 +158,7 @@ import { useTasks, useUpdateTaskStatus, useDeleteTask } from '../composables/use
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
 import KanbanBoard from '../components/kanban/KanbanBoard.vue'
+import { TASK_STATUSES } from '../constants/statuses'
 
 const router = useRouter()
 const { data: projects, isLoading: isProjectsLoading } = useProjects()

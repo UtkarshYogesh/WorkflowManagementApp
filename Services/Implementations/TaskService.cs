@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Task;
+using TaskManagement.Api.Helpers;
 using TaskManagement.Api.Models;
 using TaskManagement.Api.Services.Interfaces;
 
@@ -48,7 +49,7 @@ namespace TaskManagement.Api.Services.Implementations
                 Id = Guid.NewGuid(),
                 Title = taskRequest.Title,
                 Description = taskRequest.Description,
-                Status = "Todo",
+                Status = StatusHelper.NormalizeTaskStatus(null),
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = currentUser.UserId,
                 BacklogItemId = backlogId,
@@ -66,7 +67,7 @@ namespace TaskManagement.Api.Services.Implementations
             var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
             if (task == null) return null;
 
-            task.Status = newStatus;
+            task.Status = StatusHelper.NormalizeTaskStatus(newStatus);
             SetUpdated(task);
             await _db.SaveChangesAsync();
 

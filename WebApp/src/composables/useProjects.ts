@@ -4,6 +4,7 @@ import {
   createProject,
   deleteProject,
   fetchProjectById,
+  updateProjectStatus,
 } from "../services/projectApi";
 
 export function useProjects() {
@@ -36,5 +37,29 @@ export function useDeleteProject() {
   return useMutation({
     mutationFn: deleteProject,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
+}
+
+export function useUpdateProjectStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, status }: { projectId: string; status: string }) =>
+      updateProjectStatus(projectId, status),
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(["project", variables.projectId], response.data);
+      queryClient.setQueriesData({ queryKey: ["projects"] }, (oldData: any) => {
+        if (!Array.isArray(oldData)) return oldData;
+
+        return oldData.map((project: any) =>
+          project.projectId === variables.projectId ? { ...project, ...response.data } : project
+        );
+      });
+
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["project", variables.projectId] }),
+      ]);
+    },
   });
 }

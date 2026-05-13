@@ -177,6 +177,7 @@ import {
 } from '../composables/useBacklogs'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
+import { BACKLOG_STATUSES, FEATURE_STATUSES } from '../constants/statuses'
 
 const route = useRoute()
 const router = useRouter()
@@ -201,9 +202,9 @@ const assignedToUserId = ref('')
 const priority = ref('P3')
 const type = ref('Story')
 const showCreateForm = ref(false)
-const featureStatuses = ['Planned', 'Committed', 'Done']
+const featureStatuses = FEATURE_STATUSES
 const featurePriorities = ['P1', 'P2', 'P3']
-const backlogStatuses = ['Planned', 'Committed', 'Done']
+const backlogStatuses = BACKLOG_STATUSES
 const backlogPriorities = ['P1', 'P2', 'P3']
 const backlogTypes = ['Story', 'Bug', 'Improvement', 'Technical']
 type WorkDraft = { status: string; priority: string; type: string; assignedToUserId: string }
@@ -230,7 +231,7 @@ watch(
   (items) => {
     ;(items || []).forEach((backlog: any) => {
       backlogDrafts[backlog.id] = {
-        status: backlog.status || 'Planned',
+        status: backlog.status || 'New',
         priority: backlog.priority || 'P3',
         type: backlog.type || 'Story',
         assignedToUserId: backlog.assignedToUserId || '',
@@ -300,7 +301,7 @@ const saveFeatureChanges = async () => {
 const isBacklogDirty = (backlog: any) => {
   const draft = getBacklogDraft(backlog)
   return (
-    draft.status !== (backlog.status || 'Planned') ||
+    draft.status !== (backlog.status || 'New') ||
     draft.priority !== (backlog.priority || 'P3') ||
     draft.type !== (backlog.type || 'Story') ||
     draft.assignedToUserId !== (backlog.assignedToUserId || '')
@@ -309,7 +310,7 @@ const isBacklogDirty = (backlog: any) => {
 
 const saveBacklogChanges = async (backlog: any) => {
   const draft = getBacklogDraft(backlog)
-  if (draft.status !== (backlog.status || 'Planned')) {
+  if (draft.status !== (backlog.status || 'New')) {
     await updateBacklogStatusMutation.mutateAsync({ backlogId: backlog.id, status: draft.status })
   }
   if (
@@ -339,7 +340,7 @@ const deleteBacklog = async (backlogId: string) => {
 const getBacklogDraft = (backlog: any): WorkDraft => {
   if (!backlogDrafts[backlog.id]) {
     backlogDrafts[backlog.id] = {
-      status: backlog.status || 'Planned',
+      status: backlog.status || 'New',
       priority: backlog.priority || 'P3',
       type: backlog.type || 'Story',
       assignedToUserId: backlog.assignedToUserId || '',

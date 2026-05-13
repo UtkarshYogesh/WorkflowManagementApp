@@ -37,6 +37,7 @@
         <div v-else class="project-table">
           <div class="project-table-header">
             <span>Name</span>
+            <span>Status</span>
             <span>Created</span>
             <span></span>
           </div>
@@ -45,6 +46,7 @@
               <strong>{{ project.name }}</strong>
               <small>{{ project.description || 'No description' }}</small>
             </div>
+            <span class="status-pill">{{ project.status || 'New' }}</span>
             <span>{{ formatDate(project.createdAt) }}</span>
             <div class="project-actions">
               <router-link :to="`/projects/${project.projectId}`" class="button secondary">
@@ -128,7 +130,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .project-table-header,
 .project-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 180px;
+  grid-template-columns: minmax(0, 1fr) 180px 140px 180px;
   align-items: center;
   gap: 14px;
   padding: 12px 14px;

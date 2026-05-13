@@ -53,6 +53,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAssignTask, useDeleteTask, useTask, useUpdateTaskStatus } from '../composables/useTasks'
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
+import { TASK_STATUSES } from '../constants/statuses'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,7 +65,7 @@ const assignTaskMutation = useAssignTask()
 const updateTaskStatusMutation = useUpdateTaskStatus()
 const deleteTaskMutation = useDeleteTask()
 const ability = useAppAbility()
-const taskStatuses = ['Todo', 'In Progress', 'Done']
+const taskStatuses = TASK_STATUSES
 const taskDraft = reactive({
   status: 'Todo',
   assignedToUserId: '',

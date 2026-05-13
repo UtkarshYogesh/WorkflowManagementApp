@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.DTOs.Project;
+using TaskManagement.Api.Helpers;
 using TaskManagement.Api.Models;
 using TaskManagement.Api.Services.Interfaces;
 
@@ -32,6 +33,7 @@ namespace TaskManagement.Api.Services.Implementations
                 ProjectId = Guid.NewGuid(),
                 Name = request.Name,
                 Description = request.Description,
+                Status = StatusHelper.NormalizeProjectStatus(request.Status),
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = currentUser.UserId
             };
@@ -49,6 +51,21 @@ namespace TaskManagement.Api.Services.Implementations
                 .FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
 
             return project == null ? null : ToResponse(project);
+        }
+
+        public async Task<ProjectResponse> UpdateProjectStatusAsync(Guid projectId, string status)
+        {
+            if (!currentUser.IsAdmin) return null;
+
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
+            if (project == null) return null;
+
+            project.Status = StatusHelper.NormalizeProjectStatus(status);
+            project.UpdatedByUserId = currentUser.UserId;
+            project.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return ToResponse(project);
         }
 
         public async Task<bool> DeleteProjectAsync(Guid projectId)
@@ -73,6 +90,7 @@ namespace TaskManagement.Api.Services.Implementations
                 ProjectId = project.ProjectId,
                 Name = project.Name,
                 Description = project.Description,
+                Status = project.Status,
                 CreatedAt = project.CreatedAt,
                 CreatedByUserId = project.CreatedByUserId
             };
