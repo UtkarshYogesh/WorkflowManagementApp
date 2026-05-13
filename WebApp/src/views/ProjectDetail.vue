@@ -48,6 +48,14 @@
             </option>
           </select>
         </label>
+        <label>
+          Priority
+          <select v-model="priority">
+            <option v-for="option in featurePriorities" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
         <button class="button primary" :disabled="!name" @click="submitFeature">Create feature</button>
       </aside>
 
@@ -65,6 +73,7 @@
         <div v-else class="feature-table">
           <div class="feature-table-header">
             <span>Feature</span>
+            <span>Priority</span>
             <span>Status</span>
             <span>Assignee</span>
             <span></span>
@@ -74,6 +83,11 @@
               <strong>{{ feature.name }}</strong>
               <small>{{ feature.description || 'No description.' }}</small>
             </div>
+            <select v-model="getFeatureDraft(feature).priority">
+              <option v-for="option in featurePriorities" :key="option" :value="option">
+                {{ option }}
+              </option>
+            </select>
             <select v-model="getFeatureDraft(feature).status">
               <option v-for="status in featureStatuses" :key="status" :value="status">
                 {{ status }}
@@ -111,6 +125,7 @@ import {
   useFeatures,
   useCreateFeature,
   useDeleteFeature,
+  useUpdateFeature,
   useAssignFeature,
   useUpdateFeatureStatus,
 } from '../composables/useFeatures'
@@ -124,6 +139,7 @@ const { data: features, isLoading: isFeaturesLoading } = useFeatures(projectId)
 const { data: users } = useUsers()
 const createFeatureMutation = useCreateFeature()
 const deleteFeatureMutation = useDeleteFeature()
+const updateFeatureMutation = useUpdateFeature()
 const assignFeatureMutation = useAssignFeature()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
 const ability = useAppAbility()
@@ -131,8 +147,10 @@ const ability = useAppAbility()
 const name = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+const priority = ref('P3')
 const featureStatuses = ['Planned', 'Committed', 'Done']
-type WorkDraft = { status: string; assignedToUserId: string }
+const featurePriorities = ['P1', 'P2', 'P3']
+type WorkDraft = { status: string; priority: string; assignedToUserId: string }
 const featureDrafts = reactive<Record<string, WorkDraft>>({})
 
 watch(
@@ -141,6 +159,7 @@ watch(
     ;(items || []).forEach((feature: any) => {
       featureDrafts[feature.id] = {
         status: feature.status || 'Planned',
+        priority: feature.priority || 'P3',
         assignedToUserId: feature.assignedToUserId || '',
       }
     })
@@ -159,12 +178,14 @@ const submitFeature = async () => {
     data: {
       name: name.value,
       description: description.value,
+      priority: priority.value,
       assignedToUserId: assignedToUserId.value || null,
     },
   })
   name.value = ''
   description.value = ''
   assignedToUserId.value = ''
+  priority.value = 'P3'
 }
 
 const deleteFeature = async (featureId: string) => {
@@ -175,6 +196,7 @@ const getFeatureDraft = (feature: any): WorkDraft => {
   if (!featureDrafts[feature.id]) {
     featureDrafts[feature.id] = {
       status: feature.status || 'Planned',
+      priority: feature.priority || 'P3',
       assignedToUserId: feature.assignedToUserId || '',
     }
   }
@@ -185,6 +207,7 @@ const isFeatureDirty = (feature: any) => {
   const draft = getFeatureDraft(feature)
   return (
     draft.status !== (feature.status || 'Planned') ||
+    draft.priority !== (feature.priority || 'P3') ||
     draft.assignedToUserId !== (feature.assignedToUserId || '')
   )
 }
@@ -193,6 +216,17 @@ const saveFeatureChanges = async (feature: any) => {
   const draft = getFeatureDraft(feature)
   if (draft.status !== (feature.status || 'Planned')) {
     await updateFeatureStatusMutation.mutateAsync({ featureId: feature.id, status: draft.status })
+  }
+  if (draft.priority !== (feature.priority || 'P3')) {
+    await updateFeatureMutation.mutateAsync({
+      featureId: feature.id,
+      data: {
+        name: feature.name,
+        description: feature.description || '',
+        priority: draft.priority,
+        assignedToUserId: draft.assignedToUserId || null,
+      },
+    })
   }
   if (draft.assignedToUserId && draft.assignedToUserId !== (feature.assignedToUserId || '')) {
     await assignFeatureMutation.mutateAsync({ featureId: feature.id, userId: draft.assignedToUserId })
@@ -263,7 +297,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 .feature-table-header,
 .feature-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 190px 230px;
+  grid-template-columns: minmax(0, 1fr) 100px 140px 190px 230px;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;

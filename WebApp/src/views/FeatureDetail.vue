@@ -22,10 +22,23 @@
             <h2>Feature details</h2>
             <p>{{ feature?.description || 'No description added yet.' }}</p>
           </div>
-          <span class="status-pill">{{ feature?.status || 'Planned' }}</span>
+          <div class="summary-pills">
+            <span class="priority-pill" :class="`priority-${featureDraft.priority.toLowerCase()}`">
+              {{ featureDraft.priority }}
+            </span>
+            <span class="status-pill">{{ feature?.status || 'Planned' }}</span>
+          </div>
         </div>
         <div class="meta-grid">
           <span>Created <strong>{{ feature?.createdAt ? formatDate(feature.createdAt) : '-' }}</strong></span>
+          <label>
+            Priority
+            <select v-model="featureDraft.priority">
+              <option v-for="option in featurePriorities" :key="option" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </label>
           <label>
             Status
             <select v-model="featureDraft.status">
@@ -125,7 +138,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useFeature, useAssignFeature, useUpdateFeatureStatus } from '../composables/useFeatures'
+import { useFeature, useAssignFeature, useUpdateFeature, useUpdateFeatureStatus } from '../composables/useFeatures'
 import {
   useBacklogs,
   useCreateBacklog,
@@ -145,6 +158,7 @@ const { data: backlogs, isLoading: isBacklogsLoading } = useBacklogs(featureId)
 const { data: users } = useUsers()
 const createBacklogMutation = useCreateBacklog()
 const assignFeatureMutation = useAssignFeature()
+const updateFeatureMutation = useUpdateFeature()
 const assignBacklogMutation = useAssignBacklog()
 const updateFeatureStatusMutation = useUpdateFeatureStatus()
 const updateBacklogStatusMutation = useUpdateBacklogStatus()
@@ -156,10 +170,12 @@ const description = ref('')
 const assignedToUserId = ref('')
 const showCreateForm = ref(false)
 const featureStatuses = ['Planned', 'Committed', 'Done']
+const featurePriorities = ['P1', 'P2', 'P3']
 const backlogStatuses = ['Planned', 'Committed', 'Done']
 type WorkDraft = { status: string; assignedToUserId: string }
 const featureDraft = reactive({
   status: 'Planned',
+  priority: 'P3',
   assignedToUserId: '',
 })
 const backlogDrafts = reactive<Record<string, WorkDraft>>({})
@@ -169,6 +185,7 @@ watch(
   (value) => {
     if (!value) return
     featureDraft.status = value.status || 'Planned'
+    featureDraft.priority = value.priority || 'P3'
     featureDraft.assignedToUserId = value.assignedToUserId || ''
   },
   { immediate: true },
@@ -191,6 +208,7 @@ const isFeatureDirty = computed(() => {
   if (!feature.value) return false
   return (
     featureDraft.status !== (feature.value.status || 'Planned') ||
+    featureDraft.priority !== (feature.value.priority || 'P3') ||
     featureDraft.assignedToUserId !== (feature.value.assignedToUserId || '')
   )
 })
@@ -219,6 +237,17 @@ const saveFeatureChanges = async () => {
   if (!feature.value) return
   if (featureDraft.status !== (feature.value.status || 'Planned')) {
     await updateFeatureStatusMutation.mutateAsync({ featureId, status: featureDraft.status })
+  }
+  if (featureDraft.priority !== (feature.value.priority || 'P3')) {
+    await updateFeatureMutation.mutateAsync({
+      featureId,
+      data: {
+        name: feature.value.name,
+        description: feature.value.description || '',
+        priority: featureDraft.priority,
+        assignedToUserId: featureDraft.assignedToUserId || null,
+      },
+    })
   }
   if (
     featureDraft.assignedToUserId &&
@@ -304,6 +333,39 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
   gap: 16px;
 }
 
+.summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.priority-p1 {
+  background: #ffebe6;
+  color: #ae2e24;
+}
+
+.priority-p2 {
+  background: #fff7d6;
+  color: #7f5f01;
+}
+
+.priority-p3 {
+  background: #e3fcef;
+  color: #216e4e;
+}
+
 .feature-summary p {
   margin: 6px 0 0;
   color: #5e6c84;
@@ -311,7 +373,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
 .meta-grid {
   display: grid;
-  grid-template-columns: 160px minmax(180px, 1fr) minmax(180px, 1fr) max-content;
+  grid-template-columns: 160px minmax(110px, 0.7fr) minmax(180px, 1fr) minmax(180px, 1fr) max-content;
   gap: 14px;
   align-items: end;
   margin-top: 14px;

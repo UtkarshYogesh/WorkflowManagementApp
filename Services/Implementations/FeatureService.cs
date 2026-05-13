@@ -31,6 +31,7 @@ namespace TaskManagement.Api.Services.Implementations
             {
                 Name = featureRequest.Name,
                 Description = featureRequest.Description,
+                Priority = NormalizePriority(featureRequest.Priority),
                 AssignedToUserId = featureRequest.AssignedToUserId,
                 Id = Guid.NewGuid(),
                 ProjectId = projectId,
@@ -105,6 +106,7 @@ namespace TaskManagement.Api.Services.Implementations
 
             feature.Name = featureRequest.Name;
             feature.Description = featureRequest.Description;
+            feature.Priority = NormalizePriority(featureRequest.Priority);
             feature.AssignedToUserId = featureRequest.AssignedToUserId;
             SetUpdated(feature);
             await _db.SaveChangesAsync();
@@ -131,10 +133,21 @@ namespace TaskManagement.Api.Services.Implementations
                 Name = feature.Name,
                 Description = feature.Description,
                 Status = feature.Status,
+                Priority = feature.Priority,
                 CreatedAt = feature.CreatedAt,
                 CreatedByUserId = feature.CreatedByUserId,
                 ProjectId = feature.ProjectId,
                 AssignedToUserId = feature.AssignedToUserId
+            };
+        }
+
+        private static string NormalizePriority(string priority)
+        {
+            return priority?.Trim().ToUpperInvariant() switch
+            {
+                "P1" => "P1",
+                "P2" => "P2",
+                _ => "P3"
             };
         }
     }

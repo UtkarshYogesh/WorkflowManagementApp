@@ -48,6 +48,14 @@
             </option>
           </select>
         </label>
+        <label>
+          Priority
+          <select v-model="priority">
+            <option v-for="option in featurePriorities" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
         <div class="form-actions">
           <button class="button primary" :disabled="!selectedProjectId || !name" @click="submitFeature">
             Create feature
@@ -74,6 +82,9 @@
                   <p>{{ feature.description || 'No description' }}</p>
                 </div>
               </div>
+              <span class="priority-pill" :class="`priority-${getFeaturePriority(feature).toLowerCase()}`">
+                {{ getFeaturePriority(feature) }}
+              </span>
               <span class="status-pill">{{ feature.status }}</span>
               <span class="muted">{{ getBacklogsForFeature(feature.id).length }} backlog items</span>
               <button v-if="ability.can('delete', asSubject('Feature', feature))" class="button ghost delete-button" @click="deleteFeature(feature.id)">
@@ -153,6 +164,8 @@ const showCreateForm = ref(false)
 const name = ref('')
 const description = ref('')
 const assignedToUserId = ref('')
+const priority = ref('P3')
+const featurePriorities = ['P1', 'P2', 'P3']
 
 watch(
   projects,
@@ -205,6 +218,8 @@ const getFeatureName = (featureId: string) => {
   return filteredFeatures.value.find((feature: any) => feature.id === featureId)?.name || 'Feature'
 }
 
+const getFeaturePriority = (feature: any) => feature.priority || 'P3'
+
 const submitFeature = async () => {
   if (!selectedProjectId.value || !name.value) return
   await createFeatureMutation.mutateAsync({
@@ -212,12 +227,14 @@ const submitFeature = async () => {
     data: {
       name: name.value,
       description: description.value,
+      priority: priority.value,
       assignedToUserId: assignedToUserId.value || null,
     },
   })
   name.value = ''
   description.value = ''
   assignedToUserId.value = ''
+  priority.value = 'P3'
   showCreateForm.value = false
 }
 
@@ -291,13 +308,39 @@ const navigateToBacklog = (backlogId: string) => {
 
 .feature-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content 140px max-content;
+  grid-template-columns: minmax(0, 1fr) 58px max-content 140px max-content;
   gap: 14px;
   align-items: center;
   padding: 14px;
   border: 1px solid #dfe1e6;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.priority-p1 {
+  background: #ffebe6;
+  color: #ae2e24;
+}
+
+.priority-p2 {
+  background: #fff7d6;
+  color: #7f5f01;
+}
+
+.priority-p3 {
+  background: #e3fcef;
+  color: #216e4e;
 }
 
 .delete-button {

@@ -4,7 +4,7 @@ import { getRefreshTokenCookie, setRefreshTokenCookie, clearRefreshTokenCookie }
 import { isTokenExpired } from './jwtHelper'
 
 const api = axios.create({
-  baseURL: 'https://localhost:7062/api',
+  baseURL: 'http://localhost:5095/api',
   headers: {
     'Content-Type': 'application/json'
   }

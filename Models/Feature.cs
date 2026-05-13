@@ -6,6 +6,7 @@
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = "Planned";
+        public string Priority { get; set; } = "P3";
 
         public Guid ProjectId { get; set; }           // FK — now Guid
         public Project Project { get; set; } = null!;

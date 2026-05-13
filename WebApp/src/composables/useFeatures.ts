@@ -4,6 +4,7 @@ import {
   fetchAllFeatures,
   fetchFeatureById,
   createFeature,
+  updateFeature,
   deleteFeature,
   updateFeatureStatus,
   assignFeatureToUser,
@@ -33,7 +34,12 @@ export function useFeature(featureId: string) {
 
 type CreateFeaturePayload = {
   projectId: string;
-  data: { name: string; description: string; assignedToUserId?: string | null };
+  data: { name: string; description: string; priority?: string; assignedToUserId?: string | null };
+};
+
+type UpdateFeaturePayload = {
+  featureId: string;
+  data: { name: string; description: string; priority: string; assignedToUserId?: string | null };
 };
 
 type UpdateFeatureStatusPayload = {
@@ -44,6 +50,19 @@ type UpdateFeatureStatusPayload = {
 type AssignFeaturePayload = {
   featureId: string;
   userId: string;
+};
+
+const updateFeatureCache = (queryClient: ReturnType<typeof useQueryClient>, updatedFeature: any) => {
+  if (!updatedFeature?.id) return;
+
+  queryClient.setQueryData(["feature", updatedFeature.id], updatedFeature);
+  queryClient.setQueriesData({ queryKey: ["features"] }, (oldData: any) => {
+    if (!Array.isArray(oldData)) return oldData;
+
+    return oldData.map((feature: any) =>
+      feature.id === updatedFeature.id ? { ...feature, ...updatedFeature } : feature
+    );
+  });
 };
 
 export function useCreateFeature() {
@@ -71,9 +90,26 @@ export function useUpdateFeatureStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: UpdateFeatureStatusPayload) => updateFeatureStatus(variables.featureId, variables.status),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["features"] });
-      queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] });
+    onSuccess: (response, variables) => {
+      updateFeatureCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["features"] }),
+        queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateFeature() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: UpdateFeaturePayload) => updateFeature(variables.featureId, variables.data),
+    onSuccess: (response, variables) => {
+      updateFeatureCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["features"] }),
+        queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] }),
+      ]);
     },
   });
 }
@@ -83,9 +119,12 @@ export function useAssignFeature() {
   return useMutation({
     mutationFn: (variables: AssignFeaturePayload) =>
       assignFeatureToUser(variables.featureId, variables.userId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["features"] });
-      queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] });
+    onSuccess: (response, variables) => {
+      updateFeatureCache(queryClient, response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["features"] }),
+        queryClient.invalidateQueries({ queryKey: ["feature", variables.featureId] }),
+      ]);
     },
   });
 }

@@ -12,6 +12,9 @@ export const fetchFeatureById = (featureId: string) =>
 export const createFeature = (projectId: string, data: any) =>
   api.post(`/projects/${projectId}/features`, data);
 
+export const updateFeature = (featureId: string, data: any) =>
+  api.put(`/features/${featureId}`, data);
+
 export const deleteFeature = (featureId: string) => api.delete(`/features/${featureId}`);
 export const updateFeatureStatus = (featureId: string, newStatus: any) =>
   api.patch(`/features/${featureId}/status`, newStatus);
