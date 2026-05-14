@@ -14,6 +14,10 @@ namespace TaskManagement.Api.Data
         public DbSet<BacklogItem> BacklogItems => Set<BacklogItem>();
         public DbSet<TaskItem> Tasks => Set<TaskItem>();
 
+        public DbSet<Comment> Comments => Set<Comment>();
+
+        public DbSet<MentionComment> MentionComments => Set<MentionComment>();
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured) return;
@@ -81,6 +85,25 @@ namespace TaskManagement.Api.Data
 
             mb.Entity<RefreshToken>()
                  .HasKey(rt => rt.Id);
+
+            mb.Entity<Comment>()
+                .HasIndex(c => new { c.EntityType, c.EntityId, c.IsDeleted });
+
+            mb.Entity<MentionComment>()
+                .HasOne(mb => mb.Comment)
+                .WithMany(c => c.MentionComments)
+                .HasForeignKey(mb => mb.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            mb.Entity<MentionComment>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(m => m.MentionedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            mb.Entity<MentionComment>()
+                .HasIndex(m => new { m.CommentId, m.MentionedUserId })
+                .IsUnique();
 
             mb.Entity<User>().HasData(new User
             {
