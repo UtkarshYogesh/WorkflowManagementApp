@@ -133,6 +133,13 @@
         </div>
       </section>
     </div>
+
+    <CommentsSection
+      v-if="projectId"
+      class="mt-5"
+      :entity-id="projectId"
+      :entity-type="CommentEntityType.Project"
+    />
   </section>
 </template>
 
@@ -151,6 +158,8 @@ import {
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
 import { FEATURE_STATUSES, PROJECT_STATUSES } from '../constants/statuses'
+import CommentsSection from '../components/comments/CommentsSection.vue'
+import { CommentEntityType } from '../services/commentApi'
 
 const route = useRoute()
 const projectId = String(route.params.projectId || '')

@@ -44,6 +44,13 @@
         </div>
       </aside>
     </div>
+
+    <CommentsSection
+      v-if="taskId"
+      class="mt-5"
+      :entity-id="taskId"
+      :entity-type="CommentEntityType.Task"
+    />
   </section>
 </template>
 
@@ -54,6 +61,8 @@ import { useAssignTask, useDeleteTask, useTask, useUpdateTaskStatus } from '../c
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
 import { TASK_STATUSES } from '../constants/statuses'
+import CommentsSection from '../components/comments/CommentsSection.vue'
+import { CommentEntityType } from '../services/commentApi'
 
 const route = useRoute()
 const router = useRouter()

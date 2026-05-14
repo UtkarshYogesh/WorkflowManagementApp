@@ -618,6 +618,18 @@ Backend/API implemented:
 [x] Normal users can read projects and manage feature/backlog/task work according to ability rules.
 [x] Deleted records are filtered out of normal list queries.
 [x] Status normalization exists for project, feature, backlog item, and task statuses.
+[x] Comment model, DTOs, service, controller, and database table.
+[x] Comment mentions table stores mentioned user ids per comment.
+[x] Comments can be attached to project, feature, backlog item, or task using EntityType and EntityId.
+[x] Comment create API validates that the target entity exists.
+[x] Comment create/update API validates mentioned users.
+[x] Comment list API returns comments for a specific entity.
+[x] Comment update API supports body and mentioned user changes.
+[x] Comment delete API uses soft delete.
+[x] Any authenticated user can update or delete comments.
+[x] Comment responses include created user, created date, updated date, entity details, and mentioned users.
+[x] Comment lookup is indexed by entity type, entity id, and deleted state.
+[x] Duplicate mentions for the same user on the same comment are prevented.
 
 Frontend implemented:
 
@@ -653,6 +665,17 @@ Frontend implemented:
 [x] CASL-based frontend ability rules for Admin/User permissions.
 [x] Delete buttons are hidden when the current user does not have permission.
 [x] User settings route protected behind user management permission.
+[x] Reusable comments section component.
+[x] Comments section added to project detail, feature detail, backlog detail, and task detail pages.
+[x] Comment create, edit, and delete actions are available from detail pages.
+[x] Comments show first 3 items by default.
+[x] See more / show less option is available when more than 3 comments exist.
+[x] Inline @ mention picker is available inside comment textareas.
+[x] Mention picker filters users by username or email as the user types after @.
+[x] Selected mentions are inserted into the comment body as @username.
+[x] Selected mentioned users are sent to the API as mentionUserIds.
+[x] Mention chips show selected users and can be removed before save.
+[x] Comment UI uses Tailwind CSS utility classes.
 
 Known implemented decisions:
 
@@ -662,6 +685,8 @@ Known implemented decisions:
 [x] Project -> Feature -> Backlog Item -> Task hierarchy is the main workflow.
 [x] Priority is handled at feature and backlog item level.
 [x] Tasks are execution work and use status, not priority.
+[x] Comments are supported across all main work levels.
+[x] Comment update/delete is open to any authenticated user.
 
 
 15. Next Features That Can Be Done
@@ -719,11 +744,12 @@ Good follow-up features after My Work:
 - Show who changed what and when.
 - Helps answer: "What changed recently?"
 
-4. Comments on work items
+4. Comment notifications
 
-- Add comments to features, backlog items, and tasks.
-- Keep discussions attached to the work item.
-- Useful for collaboration before adding heavier notification features.
+- Notify mentioned users when they are added to a comment.
+- Add unread comment indicators on project, feature, backlog, and task detail pages.
+- Add a personal notification list for comment mentions.
+- Useful now that comments and @mentions are implemented.
 
 5. Blocked work dashboard
 

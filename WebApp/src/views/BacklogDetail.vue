@@ -129,6 +129,13 @@
         </article>
       </div>
     </section>
+
+    <CommentsSection
+      v-if="backlogId"
+      class="mt-5"
+      :entity-id="backlogId"
+      :entity-type="CommentEntityType.BacklogItem"
+    />
   </section>
 </template>
 
@@ -140,6 +147,8 @@ import { useTasks, useCreateTask, useAssignTask, useUpdateTaskStatus, useDeleteT
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
 import { BACKLOG_STATUSES, TASK_STATUSES } from '../constants/statuses'
+import CommentsSection from '../components/comments/CommentsSection.vue'
+import { CommentEntityType } from '../services/commentApi'
 
 const route = useRoute()
 const router = useRouter()

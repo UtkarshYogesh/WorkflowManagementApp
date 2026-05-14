@@ -160,6 +160,13 @@
         </article>
       </div>
     </section>
+
+    <CommentsSection
+      v-if="featureId"
+      class="mt-5"
+      :entity-id="featureId"
+      :entity-type="CommentEntityType.Feature"
+    />
   </section>
 </template>
 
@@ -178,6 +185,8 @@ import {
 import { useUsers } from '../composables/useUsers'
 import { asSubject, useAppAbility } from '../permissions/ability'
 import { BACKLOG_STATUSES, FEATURE_STATUSES } from '../constants/statuses'
+import CommentsSection from '../components/comments/CommentsSection.vue'
+import { CommentEntityType } from '../services/commentApi'
 
 const route = useRoute()
 const router = useRouter()
