@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Services.Implementations
     {
         public readonly AppDbContext _db;
         private readonly ICurrentUserService currentUser;
+        private readonly ILogger<BacklogService> _logger;
 
-        public BacklogService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        public BacklogService(AppDbContext appDbContext, ICurrentUserService currentUser, ILogger<BacklogService> logger)
         {
             _db = appDbContext;
             this.currentUser = currentUser;
+            _logger = logger;
         }
 
         public async Task<List<BacklogResponse>> GetAllBacklogs()
@@ -45,6 +47,7 @@ namespace TaskManagement.Api.Services.Implementations
             _db.BacklogItems.Add(backlogItem);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Backlog item {BacklogId} added to feature {FeatureId} by user {UserId}", backlogItem.Id, featureId, currentUser.UserId);
             return ToResponse(backlogItem);
         }
 
@@ -67,7 +70,11 @@ namespace TaskManagement.Api.Services.Implementations
         public async Task<BacklogResponse> UpdateBacklog(Guid backlogId, BacklogRequest backlogRequest)
         {
             var backlogItem = await _db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogId && !b.IsDeleted);
-            if (backlogItem == null) return null;
+            if (backlogItem == null)
+            {
+                _logger.LogWarning("Backlog item {BacklogId} was not found for update", backlogId);
+                return null;
+            }
 
             backlogItem.Title = backlogRequest.Title;
             backlogItem.Description = backlogRequest.Description;
@@ -77,43 +84,65 @@ namespace TaskManagement.Api.Services.Implementations
             SetUpdated(backlogItem);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Backlog item {BacklogId} updated by user {UserId}", backlogId, currentUser.UserId);
             return ToResponse(backlogItem);
         }
 
         public async Task<bool> DeleteBacklog(Guid backlogId)
         {
             var backlogItem = await _db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogId && !b.IsDeleted);
-            if (backlogItem == null || !CanDelete(backlogItem)) return false;
+            if (backlogItem == null)
+            {
+                _logger.LogWarning("Backlog item {BacklogId} was not found for delete", backlogId);
+                return false;
+            }
+
+            if (!CanDelete(backlogItem))
+            {
+                _logger.LogWarning("User {UserId} attempted to delete backlog item {BacklogId} without permission", currentUser.UserId, backlogId);
+                return false;
+            }
 
             backlogItem.IsDeleted = true;
             backlogItem.DeletedByUserId = currentUser.UserId;
             backlogItem.DeletedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Backlog item {BacklogId} deleted by user {UserId}", backlogId, currentUser.UserId);
             return true;
         }
 
         public async Task<BacklogResponse> UpdateBacklogStatus(Guid backlogId, string status)
         {
             var backlogItem = await _db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogId && !b.IsDeleted);
-            if (backlogItem == null) return null;
+            if (backlogItem == null)
+            {
+                _logger.LogWarning("Backlog item {BacklogId} was not found for status update", backlogId);
+                return null;
+            }
 
             backlogItem.Status = StatusHelper.NormalizeBacklogStatus(status);
             SetUpdated(backlogItem);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Backlog item {BacklogId} status updated to {Status} by user {UserId}", backlogId, backlogItem.Status, currentUser.UserId);
             return ToResponse(backlogItem);
         }
 
         public async Task<BacklogResponse> AssignBacklogToUser(Guid backlogId, Guid userId)
         {
             var backlogItem = await _db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogId && !b.IsDeleted);
-            if (backlogItem == null) return null;
+            if (backlogItem == null)
+            {
+                _logger.LogWarning("Backlog item {BacklogId} was not found for assignment", backlogId);
+                return null;
+            }
 
             backlogItem.AssignedToUserId = userId;
             SetUpdated(backlogItem);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Backlog item {BacklogId} assigned to user {AssignedUserId} by user {UserId}", backlogId, userId, currentUser.UserId);
             return ToResponse(backlogItem);
         }
 

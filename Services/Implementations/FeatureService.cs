@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Services.Implementations
     {
         public readonly AppDbContext _db;
         private readonly ICurrentUserService currentUser;
+        private readonly ILogger<FeatureService> _logger;
 
-        public FeatureService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        public FeatureService(AppDbContext appDbContext, ICurrentUserService currentUser, ILogger<FeatureService> logger)
         {
             _db = appDbContext;
             this.currentUser = currentUser;
+            _logger = logger;
         }
 
         public async Task<List<FeatureResponse>> GetAllFeatures()
@@ -44,6 +46,7 @@ namespace TaskManagement.Api.Services.Implementations
             await _db.Features.AddAsync(feature);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Feature {FeatureId} added to project {ProjectId} by user {UserId}", feature.Id, projectId, currentUser.UserId);
             return ToResponse(feature);
         }
 
@@ -66,44 +69,69 @@ namespace TaskManagement.Api.Services.Implementations
         public async Task<FeatureResponse> UpdatedFeatureStatus(Guid featureId, string newStatus)
         {
             var feature = await _db.Features.FirstOrDefaultAsync(f => f.Id == featureId && !f.IsDeleted);
-            if (feature == null) return null;
+            if (feature == null)
+            {
+                _logger.LogWarning("Feature {FeatureId} was not found for status update", featureId);
+                return null;
+            }
 
             feature.Status = StatusHelper.NormalizeFeatureStatus(newStatus);
             SetUpdated(feature);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Feature {FeatureId} status updated to {Status} by user {UserId}", featureId, feature.Status, currentUser.UserId);
             return ToResponse(feature);
         }
 
         public async Task<FeatureResponse> AddUserToFeature(Guid featureId, Guid userId)
         {
             var feature = await _db.Features.FirstOrDefaultAsync(f => f.Id == featureId && !f.IsDeleted);
-            if (feature == null) return null;
+            if (feature == null)
+            {
+                _logger.LogWarning("Feature {FeatureId} was not found for assignment", featureId);
+                return null;
+            }
 
             feature.AssignedToUserId = userId;
             SetUpdated(feature);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Feature {FeatureId} assigned to user {AssignedUserId} by user {UserId}", featureId, userId, currentUser.UserId);
             return ToResponse(feature);
         }
 
         public async Task<bool> DeleteFeature(Guid featureId)
         {
             var feature = await _db.Features.FirstOrDefaultAsync(f => f.Id == featureId && !f.IsDeleted);
-            if (feature == null || !CanDelete(feature)) return false;
+            if (feature == null)
+            {
+                _logger.LogWarning("Feature {FeatureId} was not found for delete", featureId);
+                return false;
+            }
+
+            if (!CanDelete(feature))
+            {
+                _logger.LogWarning("User {UserId} attempted to delete feature {FeatureId} without permission", currentUser.UserId, featureId);
+                return false;
+            }
 
             feature.IsDeleted = true;
             feature.DeletedByUserId = currentUser.UserId;
             feature.DeletedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Feature {FeatureId} deleted by user {UserId}", featureId, currentUser.UserId);
             return true;
         }
 
         public async Task<FeatureResponse> UpdateFeature(Guid featureId, FeatureRequest featureRequest)
         {
             var feature = await _db.Features.FirstOrDefaultAsync(f => f.Id == featureId && !f.IsDeleted);
-            if (feature == null) return null;
+            if (feature == null)
+            {
+                _logger.LogWarning("Feature {FeatureId} was not found for update", featureId);
+                return null;
+            }
 
             feature.Name = featureRequest.Name;
             feature.Description = featureRequest.Description;
@@ -112,6 +140,7 @@ namespace TaskManagement.Api.Services.Implementations
             SetUpdated(feature);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Feature {FeatureId} updated by user {UserId}", featureId, currentUser.UserId);
             return ToResponse(feature);
         }
 

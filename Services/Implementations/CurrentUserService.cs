@@ -6,10 +6,12 @@ namespace TaskManagement.Api.Services.Implementations
     public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly ILogger<CurrentUserService> _logger;
 
-        public CurrentUserService(IHttpContextAccessor httpContextAccessor)
+        public CurrentUserService(IHttpContextAccessor httpContextAccessor, ILogger<CurrentUserService> logger)
         {
             this.httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public Guid UserId
@@ -17,7 +19,13 @@ namespace TaskManagement.Api.Services.Implementations
             get
             {
                 var value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                return Guid.TryParse(value, out var userId) ? userId : Guid.Empty;
+                if (Guid.TryParse(value, out var userId))
+                {
+                    return userId;
+                }
+
+                _logger.LogDebug("Current request does not have a valid user id claim");
+                return Guid.Empty;
             }
         }
 

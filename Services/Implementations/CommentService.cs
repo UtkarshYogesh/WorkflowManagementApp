@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Services.Implementations
     {
         private readonly AppDbContext _db;
         private readonly ICurrentUserService currentUser;
+        private readonly ILogger<CommentService> _logger;
 
-        public CommentService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        public CommentService(AppDbContext appDbContext, ICurrentUserService currentUser, ILogger<CommentService> logger)
         {
             _db = appDbContext;
             this.currentUser = currentUser;
+            _logger = logger;
         }
 
         public async Task<CommentResponse?> CreateComment(CommentRequest commentRequest)
@@ -25,6 +27,7 @@ namespace TaskManagement.Api.Services.Implementations
 
             if (!await ExistEntityAsync(commentRequest.EntityType, commentRequest.EntityId))
             {
+                _logger.LogWarning("Comment creation failed because {EntityType} {EntityId} was not found", commentRequest.EntityType, commentRequest.EntityId);
                 return null;
             }
 
@@ -52,6 +55,7 @@ namespace TaskManagement.Api.Services.Implementations
             await _db.MentionComments.AddRangeAsync(mentionComments);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Comment {CommentId} created on {EntityType} {EntityId} by user {UserId}", comment.Id, comment.EntityType, comment.EntityId, currentUser.UserId);
             return ToResponse(comment, mentionedUserIds);
         }
 
@@ -69,6 +73,7 @@ namespace TaskManagement.Api.Services.Implementations
         {
             if (!await ExistEntityAsync(entityType, entityId))
             {
+                _logger.LogWarning("Comments requested for missing {EntityType} {EntityId}", entityType, entityId);
                 return new List<CommentResponse>();
             }
 
@@ -90,6 +95,7 @@ namespace TaskManagement.Api.Services.Implementations
 
             if (comment == null)
             {
+                _logger.LogWarning("Comment {CommentId} was not found for update", commentId);
                 return null;
             }
 
@@ -124,6 +130,7 @@ namespace TaskManagement.Api.Services.Implementations
 
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Comment {CommentId} updated by user {UserId}", commentId, currentUser.UserId);
             return ToResponse(comment, mentionedUserIds);
         }
 
@@ -132,6 +139,7 @@ namespace TaskManagement.Api.Services.Implementations
             var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == commentId && !c.IsDeleted);
             if (comment == null)
             {
+                _logger.LogWarning("Comment {CommentId} was not found for delete", commentId);
                 return false;
             }
 
@@ -140,6 +148,7 @@ namespace TaskManagement.Api.Services.Implementations
             comment.DeletedByUserId = currentUser.UserId;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Comment {CommentId} deleted by user {UserId}", commentId, currentUser.UserId);
             return true;
         }
 
@@ -167,6 +176,7 @@ namespace TaskManagement.Api.Services.Implementations
 
             if (existingUserCount != mentionedUserIds.Count)
             {
+                _logger.LogWarning("Comment validation failed because one or more mentioned users were not found");
                 throw new ArgumentException("One or more mentioned users were not found.");
             }
         }

@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Services.Implementations
     {
         public readonly AppDbContext _db;
         private readonly ICurrentUserService currentUser;
+        private readonly ILogger<TaskService> _logger;
 
-        public TaskService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        public TaskService(AppDbContext appDbContext, ICurrentUserService currentUser, ILogger<TaskService> logger)
         {
             _db = appDbContext;
             this.currentUser = currentUser;
+            _logger = logger;
         }
 
         public async Task<List<TaskResponse>> GetAllTasks()
@@ -59,56 +61,83 @@ namespace TaskManagement.Api.Services.Implementations
             _db.Tasks.Add(task);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Task {TaskId} added to backlog {BacklogId} by user {UserId}", task.Id, backlogId, currentUser.UserId);
             return ToResponse(task);
         }
 
         public async Task<TaskResponse> UpdateTaskStatus(Guid taskId, string newStatus)
         {
             var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
-            if (task == null) return null;
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} was not found for status update", taskId);
+                return null;
+            }
 
             task.Status = StatusHelper.NormalizeTaskStatus(newStatus);
             SetUpdated(task);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Task {TaskId} status updated to {Status} by user {UserId}", taskId, task.Status, currentUser.UserId);
             return ToResponse(task);
         }
 
         public async Task<bool> DeleteTask(Guid taskId)
         {
             var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
-            if (task == null || !CanDelete(task)) return false;
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} was not found for delete", taskId);
+                return false;
+            }
+
+            if (!CanDelete(task))
+            {
+                _logger.LogWarning("User {UserId} attempted to delete task {TaskId} without permission", currentUser.UserId, taskId);
+                return false;
+            }
 
             task.IsDeleted = true;
             task.DeletedByUserId = currentUser.UserId;
             task.DeletedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Task {TaskId} deleted by user {UserId}", taskId, currentUser.UserId);
             return true;
         }
 
         public async Task<TaskResponse> AssignTaskToUser(Guid taskId, Guid userId)
         {
             var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
-            if (task == null) return null;
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} was not found for assignment", taskId);
+                return null;
+            }
 
             task.AssignedToUserId = userId;
             SetUpdated(task);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Task {TaskId} assigned to user {AssignedUserId} by user {UserId}", taskId, userId, currentUser.UserId);
             return ToResponse(task);
         }
 
         public async Task<TaskResponse> UpdateTask(Guid guid, TaskRequest taskRequest)
         {
             var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == guid && !t.IsDeleted);
-            if (task == null) return null;
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} was not found for update", guid);
+                return null;
+            }
 
             task.Title = taskRequest.Title;
             task.Description = taskRequest.Description;
             SetUpdated(task);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Task {TaskId} updated by user {UserId}", guid, currentUser.UserId);
             return ToResponse(task);
         }
 

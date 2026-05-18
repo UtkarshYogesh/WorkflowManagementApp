@@ -11,11 +11,13 @@ namespace TaskManagement.Api.Services.Implementations
     {
         public readonly AppDbContext _db;
         private readonly ICurrentUserService currentUser;
+        private readonly ILogger<ProjectService> _logger;
 
-        public ProjectService(AppDbContext appDbContext, ICurrentUserService currentUser)
+        public ProjectService(AppDbContext appDbContext, ICurrentUserService currentUser, ILogger<ProjectService> logger)
         {
             _db = appDbContext;
             this.currentUser = currentUser;
+            _logger = logger;
         }
 
         public async Task<List<ProjectResponse>> GetAllProjectsAsync()
@@ -41,6 +43,7 @@ namespace TaskManagement.Api.Services.Implementations
             _db.Projects.Add(project);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Project {ProjectId} created by user {UserId}", project.ProjectId, currentUser.UserId);
             return ToResponse(project);
         }
 
@@ -55,31 +58,49 @@ namespace TaskManagement.Api.Services.Implementations
 
         public async Task<ProjectResponse> UpdateProjectStatusAsync(Guid projectId, string status)
         {
-            if (!currentUser.IsAdmin) return null;
+            if (!currentUser.IsAdmin)
+            {
+                _logger.LogWarning("User {UserId} attempted to update project {ProjectId} status without admin role", currentUser.UserId, projectId);
+                return null;
+            }
 
             var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
-            if (project == null) return null;
+            if (project == null)
+            {
+                _logger.LogWarning("Project {ProjectId} was not found for status update", projectId);
+                return null;
+            }
 
             project.Status = StatusHelper.NormalizeProjectStatus(status);
             project.UpdatedByUserId = currentUser.UserId;
             project.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Project {ProjectId} status updated to {Status} by user {UserId}", projectId, project.Status, currentUser.UserId);
             return ToResponse(project);
         }
 
         public async Task<bool> DeleteProjectAsync(Guid projectId)
         {
-            if (!currentUser.IsAdmin) return false;
+            if (!currentUser.IsAdmin)
+            {
+                _logger.LogWarning("User {UserId} attempted to delete project {ProjectId} without admin role", currentUser.UserId, projectId);
+                return false;
+            }
 
             var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
-            if (project == null) return false;
+            if (project == null)
+            {
+                _logger.LogWarning("Project {ProjectId} was not found for delete", projectId);
+                return false;
+            }
 
             project.IsDeleted = true;
             project.DeletedByUserId = currentUser.UserId;
             project.DeletedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Project {ProjectId} deleted by user {UserId}", projectId, currentUser.UserId);
             return true;
         }
 

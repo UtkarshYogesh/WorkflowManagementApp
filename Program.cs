@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using TaskManagement.Api.Data;
 using TaskManagement.Api.Helpers;
+using TaskManagement.Api.Middleware;
 using TaskManagement.Api.Services.Implementations;
 using TaskManagement.Api.Services.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,8 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
