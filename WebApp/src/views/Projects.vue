@@ -10,8 +10,16 @@
       </div>
     </div>
 
-    <div class="projects-layout">
-      <aside v-if="ability.can('create', 'Project')" class="form-card">
+    <div class="command-bar">
+      <span class="command-title">{{ projects?.length ?? 0 }} projects</span>
+      <span class="command-muted">Open a project to manage features, backlog, and tasks.</span>
+      <button v-if="ability.can('create', 'Project')" class="button primary ml-auto" @click="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? 'Close form' : 'Create project' }}
+      </button>
+    </div>
+
+    <div class="projects-layout" :class="{ 'form-open': showCreateForm }">
+      <aside v-if="ability.can('create', 'Project') && showCreateForm" class="form-card">
         <h2>Create project</h2>
         <label>
           Name
@@ -71,6 +79,7 @@ const createMutation = useCreateProject()
 const deleteMutation = useDeleteProject()
 const ability = useAppAbility()
 
+const showCreateForm = ref(false)
 const name = ref('')
 const description = ref('')
 
@@ -79,6 +88,7 @@ const createProject = async () => {
   await createMutation.mutateAsync({ name: name.value, description: description.value })
   name.value = ''
   description.value = ''
+  showCreateForm.value = false
 }
 
 const deleteProject = async (projectId: string) => {
@@ -89,101 +99,76 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString()
 </script>
 
 <style scoped>
+@reference "../style.css";
+
 .projects-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
+  @apply grid grid-cols-1 items-start gap-3.5;
 }
 
-.projects-layout:has(.form-card) {
-  grid-template-columns: 340px minmax(0, 1fr);
+.projects-layout.form-open {
+  @apply grid-cols-[320px_minmax(0,1fr)] max-[980px]:grid-cols-1;
+}
+
+.command-title {
+  @apply text-sm font-bold text-slate-800;
+}
+
+.command-muted {
+  @apply text-[13px] text-slate-600;
 }
 
 .form-card h2,
 .project-list-card h2 {
-  margin: 0 0 16px;
+  @apply mb-4 mt-0;
 }
 
 .form-card textarea {
-  min-height: 120px;
+  @apply min-h-30;
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
+  @apply mb-3.5 flex justify-between gap-3.5;
 }
 
 .section-header p {
-  margin: 4px 0 0;
-  color: #5e6c84;
+  @apply mt-1 mb-0 text-slate-600;
 }
 
 .project-table {
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  overflow: hidden;
+  @apply overflow-hidden rounded-md border border-slate-300;
 }
 
 .project-table-header,
 .project-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px 140px 180px;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  border-bottom: 1px solid #dfe1e6;
+  @apply grid grid-cols-[minmax(0,1fr)_150px_130px_150px] items-center gap-3 border-b border-slate-300 px-3 py-2.5 max-[980px]:grid-cols-1;
 }
 
 .project-table-header {
-  background: #f7f8f9;
-  color: #44546f;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
+  @apply bg-slate-50 text-xs font-extrabold uppercase text-slate-600;
 }
 
 .project-row:last-child {
-  border-bottom: 0;
+  @apply border-b-0;
 }
 
 .project-row:hover {
-  background: #f7f8f9;
+  @apply bg-slate-50;
 }
 
 .project-name {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .project-name strong,
 .project-name small {
-  display: block;
+  @apply block;
 }
 
 .project-name small {
-  overflow: hidden;
-  color: #5e6c84;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply truncate text-slate-600;
 }
 
 .project-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-@media (max-width: 980px) {
-  .projects-layout,
-  .project-table-header,
-  .project-row {
-    grid-template-columns: 1fr;
-  }
-
-  .project-actions {
-    justify-content: flex-start;
-  }
+  @apply flex justify-end gap-2 max-[980px]:justify-start;
 }
 </style>

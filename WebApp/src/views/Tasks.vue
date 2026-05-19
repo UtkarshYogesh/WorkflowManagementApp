@@ -8,6 +8,11 @@
       </div>
     </div>
 
+    <div class="command-bar">
+      <span class="command-title">{{ tasks?.length ?? 0 }} tasks</span>
+      <router-link class="button secondary" to="/backlogs">Open backlog board</router-link>
+    </div>
+
     <section class="panel">
       <div v-if="isTasksLoading" class="empty-state">Loading tasks...</div>
       <div v-else-if="!tasks?.length" class="empty-state">No tasks yet. Create one in a backlog.</div>
@@ -46,84 +51,56 @@ const getBacklogTitle = (backlogId?: string) => {
 </script>
 
 <style scoped>
+@reference "../style.css";
+
 .panel {
-  overflow-x: auto;
+  @apply overflow-x-auto p-3 max-[900px]:overflow-x-visible;
 }
 
 .task-table {
-  min-width: 760px;
-  overflow: hidden;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
+  @apply min-w-190 overflow-hidden rounded-md border border-slate-300 max-[900px]:min-w-0;
+}
+
+.command-title {
+  @apply text-sm font-bold text-slate-800;
 }
 
 .task-table-header,
 .task-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 220px 90px;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid #dfe1e6;
+  @apply grid grid-cols-[minmax(0,1fr)_120px_220px_80px] items-center gap-3 border-b border-slate-300 px-3 py-2.5 max-[900px]:grid-cols-1;
 }
 
 .task-table-header {
-  background: #f7f8f9;
-  color: #44546f;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
+  @apply bg-slate-50 text-xs font-extrabold uppercase text-slate-600;
 }
 
 .task-row:last-child {
-  border-bottom: 0;
+  @apply border-b-0;
 }
 
 .task-row:hover {
-  background: #f7f8f9;
+  @apply bg-slate-50;
 }
 
 .task-row .button {
-  justify-self: end;
+  @apply justify-self-end max-[900px]:justify-self-start;
 }
 
 .task-name {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .task-name strong,
 .task-name small {
-  display: block;
+  @apply block;
 }
 
 .task-name small,
 .muted {
-  overflow: hidden;
-  color: #5e6c84;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply truncate text-slate-600;
 }
 
 .status-pill {
-  justify-self: start;
-}
-
-@media (max-width: 900px) {
-  .panel {
-    overflow-x: visible;
-  }
-
-  .task-table {
-    min-width: 0;
-  }
-
-  .task-table-header,
-  .task-row {
-    grid-template-columns: 1fr;
-  }
-
-  .task-row .button {
-    justify-self: start;
-  }
+  @apply justify-self-start;
 }
 </style>

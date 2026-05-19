@@ -6,17 +6,9 @@
         <h1>Backlog</h1>
         <p class="subtitle">Review backlog items and the tasks attached to them.</p>
       </div>
-      <div class="page-actions">
-        <button class="button primary" @click="showCreateForm = !showCreateForm">
-          {{ showCreateForm ? 'Close form' : 'Add backlog' }}
-        </button>
-        <button class="button secondary" @click="viewMode = viewMode === 'board' ? 'list' : 'board'">
-          {{ viewMode === 'board' ? 'List view' : 'Board view' }}
-        </button>
-      </div>
     </div>
 
-    <div class="scope-panel">
+    <div class="command-bar">
       <label>
         Project
         <select v-model="selectedProjectId">
@@ -26,6 +18,14 @@
           </option>
         </select>
       </label>
+      <span class="command-divider"></span>
+      <button class="button primary" @click="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? 'Close form' : 'Add backlog' }}
+      </button>
+      <div class="segmented-control" aria-label="View mode">
+        <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">List</button>
+        <button :class="{ active: viewMode === 'board' }" @click="viewMode = 'board'">Board</button>
+      </div>
     </div>
 
     <div class="backlog-workspace" :class="{ 'form-open': showCreateForm }">
@@ -284,207 +284,131 @@ const deleteTask = async (taskId: string) => {
 </script>
 
 <style scoped>
-.scope-panel {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 14px;
-  padding: 14px 18px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
+@reference "../style.css";
+
+.command-bar {
+  @apply flex items-end;
 }
 
-.scope-panel label {
-  display: grid;
-  gap: 7px;
-  width: min(360px, 100%);
-  color: #44546f;
-  font-size: 13px;
-  font-weight: 700;
+.command-bar label {
+  @apply grid w-full max-w-[340px] gap-1 text-[13px] font-semibold text-slate-600;
+}
+
+.command-divider {
+  @apply h-[30px] w-px bg-slate-300;
+}
+
+.segmented-control {
+  @apply inline-flex overflow-hidden rounded border border-slate-300 bg-white;
+}
+
+.segmented-control button {
+  @apply min-h-8 cursor-pointer border-0 border-r border-slate-300 bg-transparent px-3 text-[13px] font-semibold text-slate-600 last:border-r-0;
+}
+
+.segmented-control button.active {
+  @apply bg-blue-50 text-blue-800;
 }
 
 .backlog-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
+  @apply grid grid-cols-1 items-start gap-4.5;
 }
 
 .backlog-workspace.form-open {
-  grid-template-columns: 340px minmax(0, 1fr);
+  @apply grid-cols-[320px_minmax(0,1fr)] max-[900px]:grid-cols-1;
 }
 
 .backlog-content {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .form-card textarea {
-  min-height: 110px;
+  @apply min-h-[110px];
 }
 
 .form-actions {
-  display: flex;
-  gap: 8px;
+  @apply flex gap-2;
 }
 
 .panel,
 .board-panel {
-  padding: 18px;
-  overflow: hidden;
+  @apply overflow-hidden p-3;
 }
 
 .board-panel {
-  overflow-x: auto;
+  @apply overflow-x-auto;
 }
 
 .backlog-list {
-  display: grid;
-  gap: 10px;
+  @apply grid gap-2.5;
 }
 
 .backlog-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 58px 110px max-content 110px max-content;
-  gap: 14px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
+  @apply grid grid-cols-[minmax(0,1fr)_58px_104px_112px_88px_max-content] items-center gap-3 rounded border border-slate-300 bg-white p-3 max-[900px]:grid-cols-1;
 }
 
 .priority-pill,
 .type-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
+  @apply inline-flex min-h-6 items-center justify-center whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold;
 }
 
 .priority-p1 {
-  background: #ffebe6;
-  color: #ae2e24;
+  @apply bg-red-50 text-red-700;
 }
 
 .priority-p2 {
-  background: #fff7d6;
-  color: #7f5f01;
+  @apply bg-amber-50 text-amber-700;
 }
 
 .priority-p3 {
-  background: #e3fcef;
-  color: #216e4e;
+  @apply bg-emerald-50 text-emerald-700;
 }
 
 .type-pill {
-  background: #f1f2f4;
-  color: #44546f;
+  @apply bg-slate-50 text-slate-600;
 }
 
 .delete-button {
-  justify-self: end;
+  @apply justify-self-end;
 }
 
 .backlog-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 0;
+  @apply flex min-w-0 items-start gap-3;
 }
 
 .backlog-main > div {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .backlog-main h3 {
-  margin: 0;
-  font-size: 15px;
+  @apply m-0 text-[15px];
 }
 
 .backlog-main p {
-  margin: 4px 0 0;
-  overflow: hidden;
-  color: #5e6c84;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply mt-1 truncate text-slate-600;
 }
 
 .toggle-button {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #dfe1e6;
-  border-radius: 6px;
-  background: #f7f8f9;
-  color: #44546f;
-  cursor: pointer;
+  @apply h-7 w-7 cursor-pointer rounded border border-slate-300 bg-slate-50 text-slate-600;
 }
 
 .muted {
-  color: #5e6c84;
-  font-size: 13px;
-  justify-self: end;
-  white-space: nowrap;
+  @apply justify-self-end whitespace-nowrap text-[13px] text-slate-600 max-[900px]:justify-self-start;
 }
 
 .nested-list {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 6px;
-  padding: 10px 0 0 40px;
+  @apply col-span-full grid gap-1.5 pt-2.5 pl-10 max-[900px]:pl-0;
 }
 
 .nested-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  min-height: 36px;
-  padding: 8px 10px;
-  border: 1px solid #dfe1e6;
-  border-radius: 6px;
-  background: #f7f8f9;
-  color: #172b4d;
-  text-align: left;
-  cursor: pointer;
-  min-width: 0;
+  @apply flex min-h-9 min-w-0 cursor-pointer items-center justify-between gap-3 rounded border border-slate-300 bg-slate-50 px-2.5 py-2 text-left text-slate-800;
 }
 
 .nested-row span:first-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply min-w-0 truncate;
 }
 
 .nested-empty {
-  color: #5e6c84;
-  font-size: 13px;
-}
-
-@media (max-width: 900px) {
-  .scope-panel {
-    justify-content: stretch;
-  }
-
-  .backlog-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .backlog-row {
-    grid-template-columns: 1fr;
-  }
-
-  .muted {
-    justify-self: start;
-  }
-
-  .nested-list {
-    padding-left: 0;
-  }
+  @apply text-[13px] text-slate-600;
 }
 </style>

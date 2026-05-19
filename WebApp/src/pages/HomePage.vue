@@ -1,17 +1,20 @@
 <template>
-  <div class="app-shell">
+  <div class="grid min-h-screen grid-cols-[232px_minmax(0,1fr)] bg-[#f3f5f8] text-[#1f2328] max-[900px]:grid-cols-1">
     <Sidebar />
-    <div class="workspace">
-      <header class="topbar">
-        <div>
-          <p class="topbar-kicker">TaskFlow workspace</p>
-          <h1>Plan, track, and ship work</h1>
+    <div class="min-w-0">
+      <header class="sticky top-0 z-5 flex min-h-14 items-center justify-between gap-5 border-b border-slate-300 bg-white px-7 max-[900px]:static max-[900px]:min-h-0 max-[900px]:flex-wrap max-[900px]:px-4 max-[900px]:py-3">
+        <div class="flex min-w-0 items-baseline gap-3">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-600">TaskFlow</p>
+          <h1 class="m-0 text-lg font-semibold text-slate-800">Boards</h1>
         </div>
-        <div class="topbar-actions">
+        <div class="flex items-center gap-1.5 max-[900px]:w-full max-[900px]:overflow-x-auto">
+          <router-link class="topbar-tab" to="/">Overview</router-link>
+          <router-link class="topbar-tab" to="/projects">Projects</router-link>
+          <router-link class="topbar-tab" to="/backlogs">Backlogs</router-link>
           <router-link v-if="ability.can('create', 'Project')" class="button primary" to="/projects">Create project</router-link>
         </div>
       </header>
-      <main class="app-main">
+      <main class="min-w-0 px-7 pb-10 pt-6 max-[900px]:px-4 max-[900px]:py-4">
         <router-view />
       </main>
     </div>
@@ -26,11 +29,11 @@ const ability = useAppAbility()
 </script>
 
 <style>
+@reference "../style.css";
+
 :root {
-  color: #172b4d;
-  background: #f6f8fb;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -38,8 +41,7 @@ const ability = useAppAbility()
 }
 
 body {
-  margin: 0;
-  background: #f6f8fb;
+  @apply m-0 bg-[#f3f5f8];
 }
 
 button,
@@ -49,156 +51,89 @@ select {
   font: inherit;
 }
 
-.app-shell {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  min-height: 100vh;
-  background: #f6f8fb;
-  color: #172b4d;
+.topbar-tab {
+  @apply inline-flex min-h-8.5 items-center rounded px-2.5 text-[13px] font-semibold text-slate-600 no-underline;
 }
 
-.workspace {
-  min-width: 0;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  min-height: 76px;
-  padding: 16px 32px;
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid #dfe1e6;
-  backdrop-filter: blur(12px);
-}
-
-.topbar h1 {
-  margin: 2px 0 0;
-  color: #172b4d;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
-.topbar-kicker {
-  margin: 0;
-  color: #5e6c84;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.app-main {
-  min-width: 0;
-  padding: 28px 32px 48px;
+.topbar-tab:hover,
+.topbar-tab.router-link-active {
+  @apply bg-blue-50 text-blue-700;
 }
 
 .page {
-  padding: 0;
+  @apply p-0;
 }
 
 .page-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 22px;
+  @apply mb-3.5 flex flex-wrap items-start justify-between gap-4;
 }
 
 .page-header h1,
 .section-header h2,
 .section-title h2 {
-  margin: 0;
-  color: #172b4d;
+  @apply m-0 text-slate-800;
   letter-spacing: 0;
 }
 
 .page-header h1 {
-  font-size: 28px;
+  @apply text-2xl;
+  font-weight: 650;
 }
 
 .subtitle {
-  color: #5e6c84;
-  margin: 6px 0 0;
+  @apply mt-1.5 max-w-180 text-sm text-slate-600;
 }
 
 .eyebrow,
 .breadcrumb {
-  margin: 0 0 8px;
-  color: #5e6c84;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  @apply mb-2 mt-0 text-xs font-bold uppercase tracking-wide text-slate-600;
 }
 
 .breadcrumb a {
-  color: #0c66e4;
-  text-decoration: none;
+  @apply text-blue-700 no-underline;
+}
+
+.page-actions,
+.command-bar {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.command-bar {
+  @apply mb-3.5 min-h-12 rounded-md border border-slate-300 bg-white px-2.5 py-1.5;
 }
 
 .button,
 .link-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: #0c66e4;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
+  @apply inline-flex min-h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-[#0078d4] px-3 text-[13px] font-semibold text-white no-underline;
 }
 
 .button:hover,
 .link-button:hover {
-  background: #0055cc;
+  @apply bg-[#106ebe];
 }
 
 .button.secondary {
-  background: #f1f2f4;
-  color: #172b4d;
-  border-color: #dfe1e6;
+  @apply border-slate-300 bg-white text-slate-800;
 }
 
 .button.secondary:hover {
-  background: #dfe1e6;
+  @apply bg-slate-50;
 }
 
 .button.ghost {
-  background: transparent;
-  color: #44546f;
-  border-color: #dfe1e6;
+  @apply border-slate-300 bg-transparent text-slate-600;
 }
 
 .button.ghost:hover {
-  background: #f1f2f4;
+  @apply bg-slate-50;
 }
 
 .button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+  @apply cursor-not-allowed opacity-55;
 }
 
 .cards-grid {
-  display: grid;
-  gap: 12px;
+  @apply grid gap-3;
 }
 
 .panel,
@@ -207,10 +142,7 @@ select {
 .info-card,
 .detail-card,
 .card {
-  background: #ffffff;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08);
+  @apply rounded-md border border-slate-300 bg-white shadow-none;
 }
 
 .form-card,
@@ -218,40 +150,29 @@ select {
 .info-card,
 .detail-card,
 .card {
-  padding: 20px;
+  @apply p-5;
+}
+
+.form-card {
+  @apply sticky top-18 max-[900px]:static;
+}
+
+.form-card h2 {
+  @apply border-b border-slate-300 pb-3 text-base text-slate-800;
 }
 
 .empty-state {
-  padding: 24px;
-  border: 1px dashed #c1c7d0;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #5e6c84;
-  text-align: center;
+  @apply rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600;
 }
 
 .status-pill,
 .status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: #e9f2ff;
-  color: #0c66e4;
-  font-size: 12px;
-  font-weight: 700;
+  @apply inline-flex min-h-6 items-center justify-center rounded-full bg-blue-50 px-2.5 text-xs font-bold text-blue-800;
 }
 
 .form-card label,
 .field {
-  display: grid;
-  gap: 7px;
-  margin-bottom: 14px;
-  color: #44546f;
-  font-size: 13px;
-  font-weight: 700;
+  @apply mb-3.5 grid gap-1.5 text-[13px] font-bold text-slate-600;
 }
 
 .form-card input,
@@ -263,12 +184,7 @@ select {
 select,
 input,
 textarea {
-  width: 100%;
-  border-radius: 6px;
-  border: 1px solid #c1c7d0;
-  background: #ffffff;
-  color: #172b4d;
-  padding: 9px 11px;
+  @apply w-full rounded border border-slate-300 bg-white px-2.5 py-2 text-slate-800;
 }
 
 textarea {
@@ -278,72 +194,44 @@ textarea {
 select:focus,
 input:focus,
 textarea:focus {
-  outline: 2px solid rgba(12, 102, 228, 0.28);
-  border-color: #0c66e4;
+  @apply border-[#0078d4] outline-2 outline-[#0078d438];
 }
 
 .data-table {
-  overflow: hidden;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
+  @apply overflow-hidden rounded-md border border-slate-300 bg-white;
 }
 
 .table-header,
 .table-row {
-  display: grid;
-  align-items: center;
-  border-bottom: 1px solid #dfe1e6;
+  @apply grid items-center border-b border-slate-300;
 }
 
 .table-header {
-  background: #f7f8f9;
-  color: #44546f;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
+  @apply bg-slate-50 text-xs font-extrabold uppercase text-slate-600;
 }
 
 .table-row {
-  color: #172b4d;
-  cursor: pointer;
+  @apply cursor-pointer text-slate-800;
 }
 
 .table-row:hover {
-  background: #f7f8f9;
+  @apply bg-slate-50;
 }
 
 .table-row:last-child {
-  border-bottom: 0;
+  @apply border-b-0;
 }
 
 .header-cell,
 .table-cell {
-  min-width: 0;
-  padding: 12px 14px;
+  @apply min-w-0 px-3.5 py-3;
 }
 
 .clickable-title {
-  color: #172b4d;
-  cursor: pointer;
+  @apply cursor-pointer text-slate-800;
 }
 
 .clickable-title:hover {
-  color: #0c66e4;
-}
-
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar {
-    position: static;
-    padding: 16px 20px;
-  }
-
-  .app-main {
-    padding: 20px;
-  }
+  @apply text-blue-700;
 }
 </style>

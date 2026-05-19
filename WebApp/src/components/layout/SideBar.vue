@@ -1,16 +1,17 @@
 <template>
-  <aside class="sidebar">
-    <router-link class="brand" to="/">
-      <span class="brand-mark">TF</span>
+  <aside class="sticky top-0 flex h-screen flex-col gap-3.5 border-r border-slate-950 bg-[#10213b] px-2.5 py-3.5 text-slate-200 max-[900px]:static max-[900px]:h-auto">
+    <router-link class="flex items-center gap-3 border-b border-white/10 px-2.5 pb-4 pt-2 text-white no-underline" to="/">
+      <span class="inline-flex h-9 w-9 items-center justify-center rounded bg-[#0078d4] text-lg font-extrabold text-white">T</span>
       <span>
-        <strong>TaskFlow</strong>
-        <small>Delivery workspace</small>
+        <strong class="block text-sm text-white">TaskFlow</strong>
+        <small class="block max-w-40 truncate text-xs text-slate-400 max-[900px]:hidden">Project service</small>
       </span>
     </router-link>
 
-    <nav class="nav">
+    <nav class="grid gap-0.5 pt-1.5 max-[900px]:grid-cols-5">
+      <span class="px-2.5 pb-1.5 pt-2 text-[11px] font-extrabold uppercase tracking-wide text-slate-400 max-[900px]:hidden">Boards</span>
       <router-link class="nav-link" to="/" exact-active-class="router-link-active">
-        <span class="nav-icon">#</span>
+        <span class="nav-icon">D</span>
         Dashboard
       </router-link>
       <router-link class="nav-link" to="/projects">
@@ -25,21 +26,27 @@
         <span class="nav-icon">B</span>
         Backlog
       </router-link>
+      <router-link class="nav-link" to="/tasks">
+        <span class="nav-icon">T</span>
+        Tasks
+      </router-link>
     </nav>
 
-    <div class="sidebar-footer">
-      <router-link v-if="ability.can('manage', 'User')" class="nav-link settings-link" to="/settings/users">
+    <div class="mt-auto grid gap-3 border-t border-white/10 pt-3.5 max-[900px]:hidden">
+      <router-link v-if="ability.can('manage', 'User')" class="nav-link" to="/settings/users">
         <span class="nav-icon">U</span>
         User settings
       </router-link>
-      <div v-if="user" class="user-info">
-        <span class="avatar">{{ userInitials }}</span>
+      <div v-if="user" class="flex items-center gap-2.5">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-xs font-extrabold text-white">{{ userInitials }}</span>
         <span>
-          <strong>{{ user.username }}</strong>
-          <small>{{ user.email }}</small>
+          <strong class="block text-sm text-white">{{ user.username }}</strong>
+          <small class="block max-w-40 truncate text-xs text-slate-400">{{ user.email }}</small>
         </span>
       </div>
-      <button @click="handleLogout" class="logout-btn">Logout</button>
+      <button class="min-h-8 cursor-pointer rounded border border-white/15 bg-transparent font-bold text-slate-200 hover:bg-white/10 hover:text-white" @click="handleLogout">
+        Logout
+      </button>
     </div>
   </aside>
 </template>
@@ -63,164 +70,22 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-.sidebar {
-  position: sticky;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  height: 100vh;
-  padding: 18px 14px;
-  background: #ffffff;
-  border-right: 1px solid #dfe1e6;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 8px 14px;
-  border-bottom: 1px solid #dfe1e6;
-  color: #172b4d;
-  text-decoration: none;
-}
-
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: #0c66e4;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.brand strong,
-.user-info strong {
-  display: block;
-  color: #172b4d;
-  font-size: 14px;
-}
-
-.brand small,
-.user-info small {
-  display: block;
-  max-width: 160px;
-  overflow: hidden;
-  color: #5e6c84;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.nav {
-  display: grid;
-  gap: 4px;
-}
+@reference "../../style.css";
 
 .nav-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 38px;
-  padding: 0 10px;
-  border-radius: 6px;
-  color: #44546f;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
+  @apply flex min-h-9 items-center gap-2.5 rounded border-l-[3px] border-transparent px-2.5 text-sm font-semibold text-slate-200 no-underline max-[900px]:justify-center max-[900px]:text-xs;
 }
 
 .nav-link:hover,
 .nav-link.router-link-active {
-  background: #e9f2ff;
-  color: #0c66e4;
+  @apply border-l-sky-300 bg-white/10 text-white;
 }
 
 .nav-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
-  background: #f1f2f4;
-  color: #44546f;
-  font-size: 12px;
-  font-weight: 800;
+  @apply inline-flex h-5 w-5 items-center justify-center rounded text-xs font-extrabold text-slate-400 max-[900px]:hidden;
 }
 
 .nav-link.router-link-active .nav-icon {
-  background: #0c66e4;
-  color: #ffffff;
-}
-
-.sidebar-footer {
-  display: grid;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid #dfe1e6;
-}
-
-.settings-link {
-  margin-bottom: 2px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.logout-btn {
-  min-height: 34px;
-  border: 1px solid #dfe1e6;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #44546f;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.logout-btn:hover {
-  background: #f1f2f4;
-}
-
-@media (max-width: 900px) {
-  .sidebar {
-    position: static;
-    height: auto;
-  }
-
-  .nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .nav-link {
-    justify-content: center;
-    font-size: 12px;
-  }
-
-  .nav-icon,
-  .brand small {
-    display: none;
-  }
+  @apply text-white;
 }
 </style>

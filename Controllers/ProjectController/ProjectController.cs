@@ -42,6 +42,15 @@ namespace TaskManagement.Api.Controllers.ProjectController
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPut("{projectId}")]
+        public async Task<IActionResult> UpdateProject(Guid projectId, [FromBody] ProjectRequest projectRequest)
+        {
+            var project = await projectService.UpdateProjectAsync(projectId, projectRequest);
+            if (project == null) return NotFound();
+            return Ok(project);
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{projectId}/status")]
         public async Task<IActionResult> UpdateProjectStatus(Guid projectId, [FromBody] string status)
         {

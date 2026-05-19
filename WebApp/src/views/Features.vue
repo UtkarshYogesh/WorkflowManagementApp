@@ -6,17 +6,9 @@
         <h1>Features</h1>
         <p class="subtitle">Track feature work and the backlog items underneath each feature.</p>
       </div>
-      <div class="page-actions">
-        <button class="button primary" @click="showCreateForm = !showCreateForm">
-          {{ showCreateForm ? 'Close form' : 'Add feature' }}
-        </button>
-        <button class="button secondary" @click="viewMode = viewMode === 'board' ? 'list' : 'board'">
-          {{ viewMode === 'board' ? 'List view' : 'Board view' }}
-        </button>
-      </div>
     </div>
 
-    <div class="scope-panel">
+    <div class="command-bar">
       <label>
         Project
         <select v-model="selectedProjectId">
@@ -26,6 +18,14 @@
           </option>
         </select>
       </label>
+      <span class="command-divider"></span>
+      <button class="button primary" @click="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? 'Close form' : 'Add feature' }}
+      </button>
+      <div class="segmented-control" aria-label="View mode">
+        <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">List</button>
+        <button :class="{ active: viewMode === 'board' }" @click="viewMode = 'board'">Board</button>
+      </div>
     </div>
 
     <div class="feature-workspace" :class="{ 'form-open': showCreateForm }">
@@ -253,259 +253,157 @@ const navigateToBacklog = (backlogId: string) => {
 </script>
 
 <style scoped>
-.scope-panel {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 14px;
-  padding: 14px 18px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
+@reference "../style.css";
+
+.command-bar {
+  @apply flex items-end;
 }
 
-.scope-panel label {
-  display: grid;
-  gap: 7px;
-  width: min(360px, 100%);
-  color: #44546f;
-  font-size: 13px;
-  font-weight: 700;
+.command-bar label {
+  @apply grid w-full max-w-[340px] gap-1 text-[13px] font-semibold text-slate-600;
+}
+
+.command-divider {
+  @apply h-[30px] w-px bg-slate-300;
+}
+
+.segmented-control {
+  @apply inline-flex overflow-hidden rounded border border-slate-300 bg-white;
+}
+
+.segmented-control button {
+  @apply min-h-8 cursor-pointer border-0 border-r border-slate-300 bg-transparent px-3 text-[13px] font-semibold text-slate-600 last:border-r-0;
+}
+
+.segmented-control button.active {
+  @apply bg-blue-50 text-blue-800;
 }
 
 .feature-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
+  @apply grid grid-cols-1 items-start gap-4.5;
 }
 
 .feature-workspace.form-open {
-  grid-template-columns: 340px minmax(0, 1fr);
+  @apply grid-cols-[320px_minmax(0,1fr)] max-[900px]:grid-cols-1;
 }
 
 .feature-content {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .form-card textarea {
-  min-height: 110px;
+  @apply min-h-[110px];
 }
 
 .form-actions {
-  display: flex;
-  gap: 8px;
+  @apply flex gap-2;
 }
 
 .panel,
 .board-panel {
-  padding: 18px;
-  overflow: hidden;
+  @apply overflow-hidden p-3;
 }
 
 .feature-list {
-  display: grid;
-  gap: 10px;
+  @apply grid gap-2.5;
 }
 
 .feature-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 58px max-content 140px max-content;
-  gap: 14px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
+  @apply grid grid-cols-[minmax(0,1fr)_58px_112px_120px_max-content] items-center gap-3 rounded border border-slate-300 bg-white p-3 max-[900px]:grid-cols-1;
 }
 
 .priority-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
+  @apply inline-flex min-h-6 items-center justify-center rounded-full px-2.5 text-xs font-extrabold;
 }
 
 .priority-p1 {
-  background: #ffebe6;
-  color: #ae2e24;
+  @apply bg-red-50 text-red-700;
 }
 
 .priority-p2 {
-  background: #fff7d6;
-  color: #7f5f01;
+  @apply bg-amber-50 text-amber-700;
 }
 
 .priority-p3 {
-  background: #e3fcef;
-  color: #216e4e;
+  @apply bg-emerald-50 text-emerald-700;
 }
 
 .delete-button {
-  justify-self: end;
+  @apply justify-self-end;
 }
 
 .feature-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 0;
+  @apply flex min-w-0 items-start gap-3;
 }
 
 .feature-main > div {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 .feature-main h3 {
-  margin: 0;
-  font-size: 15px;
+  @apply m-0 text-[15px];
 }
 
 .feature-main p {
-  margin: 4px 0 0;
-  overflow: hidden;
-  color: #5e6c84;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply mt-1 truncate text-slate-600;
 }
 
 .toggle-button {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #dfe1e6;
-  border-radius: 6px;
-  background: #f7f8f9;
-  color: #44546f;
-  cursor: pointer;
+  @apply h-7 w-7 cursor-pointer rounded border border-slate-300 bg-slate-50 text-slate-600;
 }
 
 .muted {
-  color: #5e6c84;
-  font-size: 13px;
-  justify-self: end;
-  white-space: nowrap;
+  @apply justify-self-end whitespace-nowrap text-[13px] text-slate-600 max-[900px]:justify-self-start;
 }
 
 .nested-list {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 6px;
-  padding: 10px 0 0 40px;
+  @apply col-span-full grid gap-1.5 pt-2.5 pl-10 max-[900px]:pl-0;
 }
 
 .nested-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  min-height: 36px;
-  padding: 8px 10px;
-  border: 1px solid #dfe1e6;
-  border-radius: 6px;
-  background: #f7f8f9;
-  color: #172b4d;
-  text-align: left;
-  cursor: pointer;
-  min-width: 0;
+  @apply flex min-h-9 min-w-0 cursor-pointer items-center justify-between gap-3 rounded border border-slate-300 bg-slate-50 px-2.5 py-2 text-left text-slate-800;
 }
 
 .nested-row span:first-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply min-w-0 truncate;
 }
 
 .nested-empty,
 .empty-column {
-  color: #5e6c84;
-  font-size: 13px;
+  @apply text-[13px] text-slate-600;
 }
 
 .feature-board {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  padding-bottom: 8px;
+  @apply flex gap-3.5 overflow-x-auto pb-2;
 }
 
 .board-column {
-  flex: 0 0 300px;
-  min-height: 420px;
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #f7f8f9;
+  @apply min-h-105 min-w-0 flex-[0_0_300px] rounded-md border border-slate-300 bg-slate-50 p-3 max-[900px]:basis-70;
 }
 
 .board-column header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  @apply mb-3 flex items-center justify-between;
 }
 
 .board-column h2 {
-  margin: 0;
-  font-size: 14px;
-  color: #172b4d;
+  @apply m-0 text-sm text-slate-800;
 }
 
 .board-column header span {
-  color: #5e6c84;
-  font-weight: 700;
+  @apply font-bold text-slate-600;
 }
 
 .work-card {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 10px;
-  padding: 12px;
-  border: 1px solid #dfe1e6;
-  border-radius: 8px;
-  background: #ffffff;
-  cursor: pointer;
-  min-width: 0;
+  @apply mb-2.5 grid min-w-0 cursor-pointer gap-1.5 rounded border border-slate-300 bg-white p-3;
 }
 
 .work-card:hover {
-  border-color: #0c66e4;
+  @apply border-blue-700;
 }
 
 .work-card p,
 .work-card small {
-  margin: 0;
-  color: #5e6c84;
+  @apply m-0 text-slate-600;
   overflow-wrap: anywhere;
-}
-
-@media (max-width: 900px) {
-  .scope-panel {
-    justify-content: stretch;
-  }
-
-  .feature-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .feature-row {
-    grid-template-columns: 1fr;
-  }
-
-  .muted {
-    justify-self: start;
-  }
-
-  .nested-list {
-    padding-left: 0;
-  }
-
-  .board-column {
-    flex-basis: 280px;
-  }
 }
 </style>

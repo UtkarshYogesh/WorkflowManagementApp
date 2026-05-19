@@ -3,6 +3,7 @@ import {
   fetchTasks,
   fetchAllTasks,
   createTask,
+  updateTask,
   deleteTask,
   updateTaskStatus,
   fetchTaskById,
@@ -50,6 +51,18 @@ export function useUpdateTaskStatus() {
 
   return useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: string }) => updateTaskStatus(taskId, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, data }: { taskId: string; data: any }) => updateTask(taskId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });

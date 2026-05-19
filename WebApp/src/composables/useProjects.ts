@@ -4,6 +4,7 @@ import {
   createProject,
   deleteProject,
   fetchProjectById,
+  updateProject,
   updateProjectStatus,
 } from "../services/projectApi";
 
@@ -37,6 +38,21 @@ export function useDeleteProject() {
   return useMutation({
     mutationFn: deleteProject,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, data }: { projectId: string; data: any }) => updateProject(projectId, data),
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(["project", variables.projectId], response.data);
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["project", variables.projectId] }),
+      ]);
+    },
   });
 }
 

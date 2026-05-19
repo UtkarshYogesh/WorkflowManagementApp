@@ -56,6 +56,32 @@ namespace TaskManagement.Api.Services.Implementations
             return project == null ? null : ToResponse(project);
         }
 
+        public async Task<ProjectResponse> UpdateProjectAsync(Guid projectId, ProjectRequest request)
+        {
+            if (!currentUser.IsAdmin)
+            {
+                _logger.LogWarning("User {UserId} attempted to update project {ProjectId} without admin role", currentUser.UserId, projectId);
+                return null;
+            }
+
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjectId == projectId && !p.IsDeleted);
+            if (project == null)
+            {
+                _logger.LogWarning("Project {ProjectId} was not found for update", projectId);
+                return null;
+            }
+
+            project.Name = request.Name;
+            project.Description = request.Description;
+            project.Status = StatusHelper.NormalizeProjectStatus(request.Status);
+            project.UpdatedByUserId = currentUser.UserId;
+            project.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Project {ProjectId} updated by user {UserId}", projectId, currentUser.UserId);
+            return ToResponse(project);
+        }
+
         public async Task<ProjectResponse> UpdateProjectStatusAsync(Guid projectId, string status)
         {
             if (!currentUser.IsAdmin)
