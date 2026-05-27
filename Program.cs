@@ -46,8 +46,26 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+}
+
+if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(options =>
+        options.UseSqlServer(connectionString, sqlOptions =>
+            sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext, SqliteAppDbContext>(options =>
+        options.UseSqlite(connectionString, sqliteOptions =>
+            sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+}
 builder.Services.AddScoped<IProjectInterface, ProjectService>();
 builder.Services.AddScoped<IFeatureInterface, FeatureService>();
 builder.Services.AddScoped<IBacklogInterface, BacklogService>();

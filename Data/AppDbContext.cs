@@ -5,7 +5,7 @@ namespace TaskManagement.Api.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions options) : base(options) { }
 
         public DbSet<User> Users => Set<User>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -18,13 +18,6 @@ namespace TaskManagement.Api.Data
 
         public DbSet<MentionComment> MentionComments => Set<MentionComment>();
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-        {
-            if (!options.IsConfigured) return;
-
-            options.UseSqlite(o =>
-                o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-        }
         protected override void OnModelCreating(ModelBuilder mb)
         {
             mb.Entity<User>()
